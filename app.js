@@ -61,23 +61,182 @@ const localDB = {
     }
 };
 
-const THEME_PRESETS = {
-    clean_paper: { theme: 'light', bg: '#ffffff', text: '#18181b', name: 'Clean Paper' },
-    sepia: { theme: 'light', bg: '#f4ecd8', text: '#45321f', name: 'Warm Sepia' },
-    parchment: { theme: 'light', bg: '#fef3c7', text: '#3f2e1a', name: 'Golden Parchment' },
-    rose_clay: { theme: 'light', bg: '#fcefe8', text: '#4c2830', name: 'Twilight Rose' },
-    oled: { theme: 'dark', bg: '#000000', text: '#e4e4e7', name: 'True OLED Black' },
-    forest: { theme: 'dark', bg: '#0c1f15', text: '#d1fae5', name: 'Forest Sanctuary' },
-    navy: { theme: 'dark', bg: '#0b172a', text: '#dbeafe', name: 'Midnight Navy' },
-    candlelight: { theme: 'dark', bg: '#1e140d', text: '#fed7aa', name: 'Candlelight Bronze' },
-    solarized: { theme: 'dark', bg: '#04202c', text: '#a7f3d0', name: 'Solarized Teal' },
-    amethyst: { theme: 'dark', bg: '#170b22', text: '#ede9fe', name: 'Royal Amethyst' },
-    // Backwards-compatible aliases
-    default_light: { theme: 'light', bg: '#ffffff', text: '#18181b', name: 'Clean Paper' },
-    dim: { theme: 'dark', bg: '#1e140d', text: '#fed7aa', name: 'Candlelight Bronze' },
-    mocha: { theme: 'dark', bg: '#0c1f15', text: '#d1fae5', name: 'Forest Sanctuary' },
-    rosewater: { theme: 'light', bg: '#fcefe8', text: '#4c2830', name: 'Twilight Rose' }
+const FULL_THEMES = {
+    // === MAIN ===
+    pure_white: {
+        id: 'pure_white',
+        name: 'Pure White',
+        category: 'main',
+        mode: 'light',
+        bg: '#ffffff',
+        text: '#18181b',
+        font: 'Inter',
+        accent: { color: '#4f46e5', hover: '#4338ca', glow: 'rgba(79, 70, 229, 0.35)' },
+        desc: 'Crisp minimal daylight reading'
+    },
+    amoled_black: {
+        id: 'amoled_black',
+        name: 'AMOLED Black',
+        category: 'main',
+        mode: 'dark',
+        bg: '#000000',
+        text: '#e4e4e7',
+        font: 'Inter',
+        accent: { color: '#6366f1', hover: '#4f46e5', glow: 'rgba(99, 102, 241, 0.4)' },
+        desc: 'Zero-emission pitch black for OLED'
+    },
+    sepia_cathedral: {
+        id: 'sepia_cathedral',
+        name: 'Sepia Cathedral',
+        category: 'main',
+        mode: 'light',
+        bg: '#f4ecd8',
+        text: '#45321f',
+        font: 'Merriweather',
+        accent: { color: '#b45309', hover: '#92400e', glow: 'rgba(180, 83, 9, 0.35)' },
+        desc: 'Beloved vintage study book tone'
+    },
+    olive_grove: {
+        id: 'olive_grove',
+        name: 'Olive Grove',
+        category: 'main',
+        mode: 'light',
+        bg: '#edf2ec',
+        text: '#1e382b',
+        font: 'Lora',
+        accent: { color: '#15803d', hover: '#166534', glow: 'rgba(21, 128, 61, 0.35)' },
+        desc: 'Calming natural sage eye-comfort'
+    },
+    cathedral_midnight: {
+        id: 'cathedral_midnight',
+        name: 'Cathedral Midnight',
+        category: 'main',
+        mode: 'dark',
+        bg: '#120d1c',
+        text: '#ede9fe',
+        font: 'Merriweather',
+        accent: { color: '#8b5cf6', hover: '#7c3aed', glow: 'rgba(139, 92, 246, 0.4)' },
+        desc: 'Contemplative deep sanctuary violet'
+    },
+
+    // === LIGHT ===
+    golden_parchment: {
+        id: 'golden_parchment',
+        name: 'Golden Parchment',
+        category: 'light',
+        mode: 'light',
+        bg: '#faedd0',
+        text: '#3f2d18',
+        font: 'Crimson Pro',
+        accent: { color: '#d97706', hover: '#b45309', glow: 'rgba(217, 119, 6, 0.4)' },
+        desc: 'Illuminated liturgical manuscript'
+    },
+    ancient_scroll: {
+        id: 'ancient_scroll',
+        name: 'Ancient Scroll',
+        category: 'light',
+        mode: 'light',
+        bg: '#f4ebd9',
+        text: '#382b1d',
+        font: 'Tinos',
+        accent: { color: '#c2410c', hover: '#9a3412', glow: 'rgba(194, 65, 12, 0.35)' },
+        desc: 'Antiquity papyrus & gall ink'
+    },
+    light_rose: {
+        id: 'light_rose',
+        name: 'Light Rose',
+        category: 'light',
+        mode: 'light',
+        bg: '#fdf0f2',
+        text: '#4c2334',
+        font: 'Playfair Display',
+        accent: { color: '#e11d48', hover: '#be123c', glow: 'rgba(225, 29, 72, 0.35)' },
+        desc: 'Soft blush rose quartz petal'
+    },
+    yellow_halo: {
+        id: 'yellow_halo',
+        name: 'Yellow Halo',
+        category: 'light',
+        mode: 'light',
+        bg: '#fef9c3',
+        text: '#453310',
+        font: 'Crimson Pro',
+        accent: { color: '#eab308', hover: '#ca8a04', glow: 'rgba(234, 179, 8, 0.45)' },
+        desc: 'Divine warm golden aureole'
+    },
+    soft_light: {
+        id: 'soft_light',
+        name: 'Soft Light',
+        category: 'light',
+        mode: 'light',
+        bg: '#f5f5f7',
+        text: '#27272a',
+        font: 'Nunito',
+        accent: { color: '#0ea5e9', hover: '#0284c7', glow: 'rgba(14, 165, 233, 0.35)' },
+        desc: 'Low-glare daytime reading ease'
+    },
+
+    // === DARK ===
+    red_rose: {
+        id: 'red_rose',
+        name: 'Red Rose',
+        category: 'dark',
+        mode: 'dark',
+        bg: '#17070b',
+        text: '#ffe4e6',
+        font: 'Playfair Display',
+        accent: { color: '#f43f5e', hover: '#e11d48', glow: 'rgba(244, 63, 94, 0.45)' },
+        desc: 'Velvet crimson noir & ruby silk'
+    },
+    neon_blue: {
+        id: 'neon_blue',
+        name: 'Neon Blue',
+        category: 'dark',
+        mode: 'dark',
+        bg: '#040a17',
+        text: '#e0f2fe',
+        font: 'Oswald',
+        accent: { color: '#00d2ff', hover: '#0284c7', glow: 'rgba(0, 210, 255, 0.5)' },
+        desc: 'Electric cobalt living waters'
+    },
+    night_sky: {
+        id: 'night_sky',
+        name: 'Night Sky',
+        category: 'dark',
+        mode: 'dark',
+        bg: '#070e1c',
+        text: '#e2e8f0',
+        font: 'Lora',
+        accent: { color: '#3b82f6', hover: '#2563eb', glow: 'rgba(59, 130, 246, 0.4)' },
+        desc: 'Starry firmament & celestial sapphire'
+    },
+    golden_age: {
+        id: 'golden_age',
+        name: 'Golden Age',
+        category: 'dark',
+        mode: 'dark',
+        bg: '#13100a',
+        text: '#fef08a',
+        font: 'Crimson Pro',
+        accent: { color: '#f59e0b', hover: '#d97706', glow: 'rgba(245, 158, 11, 0.45)' },
+        desc: 'Obsidian sanctuary & imperial gold'
+    },
+    grey_hound: {
+        id: 'grey_hound',
+        name: 'Grey Hound',
+        category: 'dark',
+        mode: 'dark',
+        bg: '#16181d',
+        text: '#d1d5db',
+        font: 'Roboto',
+        accent: { color: '#94a3b8', hover: '#64748b', glow: 'rgba(148, 163, 184, 0.35)' },
+        desc: 'Tactical matte slate & cool platinum'
+    }
 };
+
+const THEME_PRESETS = FULL_THEMES;
+let currentActiveThemeId = 'amoled_black';
+let currentThemeCategory = 'main';
 
 const scriptureDisplay = document.getElementById('scripture-display'), initialMessage = document.getElementById('initial-message'), versionSubtitle = document.getElementById('version-subtitle');
 const selectionTooltip = document.getElementById('selection-tooltip');
@@ -152,6 +311,7 @@ function buildSettingsObject() {
         contentWidth: currentContentWidth,
         accentColor: currentAccentColor,
         theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+        activeThemeId: currentActiveThemeId,
         customBibles,
         customFonts,
         customBg: currentCustomBg,
@@ -183,6 +343,11 @@ function applyLoadedSettings(s, skipSave = false) {
     if (s.fontFamily) applyFontFamily(s.fontFamily, true); 
     if (s.theme) applyTheme(s.theme, true); 
     applyCustomColors(s.customBg || null, s.customText || null, true);
+    
+    if (s.activeThemeId && FULL_THEMES[s.activeThemeId]) {
+        currentActiveThemeId = s.activeThemeId;
+    }
+    updateFullThemesUI();
     
     if (!skipSave) {
         settingsUpdatedAt = s.updatedAt || Date.now();
@@ -942,14 +1107,13 @@ function updateSettingsPreview() {
     }
 
     if (themeIndicator) {
-        if (currentCustomBg || currentCustomText) {
+        const fullTheme = FULL_THEMES[currentActiveThemeId];
+        if (fullTheme && (!currentCustomBg || currentCustomBg === fullTheme.bg) && (!currentCustomText || currentCustomText === fullTheme.text)) {
+            themeIndicator.textContent = fullTheme.name;
+        } else if (currentCustomBg || currentCustomText) {
             themeIndicator.textContent = 'Custom Colors';
         } else {
-            const presetSelect = document.querySelector('.theme-preset-select');
-            const presetName = presetSelect && presetSelect.value !== 'custom' 
-                ? presetSelect.options[presetSelect.selectedIndex].text 
-                : (isDark ? 'Dark Mode' : 'Light Mode');
-            themeIndicator.textContent = presetName;
+            themeIndicator.textContent = isDark ? 'Dark Mode' : 'Light Mode';
         }
     }
 
@@ -957,6 +1121,109 @@ function updateSettingsPreview() {
     if (sampleHl && currentAccentColor) {
         sampleHl.style.boxShadow = `0 0 12px ${currentAccentColor.glow || 'rgba(79, 70, 229, 0.3)'}`;
     }
+}
+
+function applyFullTheme(themeId, skipSave = false) {
+    const theme = FULL_THEMES[themeId];
+    if (!theme) return;
+
+    currentActiveThemeId = themeId;
+
+    // 1. Switch global UI mode (dark / light)
+    applyTheme(theme.mode, true);
+
+    // 2. Switch reading canvas colors
+    applyCustomColors(theme.bg, theme.text, true);
+
+    // 3. Switch accent color
+    applyAccentColor(theme.accent, true);
+
+    // 4. Switch font family to match theme
+    applyFontFamily(theme.font, true);
+
+    // 5. Update UI Badges & Grid Active States
+    updateFullThemesUI();
+
+    // 6. Update Live Reading Preview
+    updateSettingsPreview();
+
+    if (!skipSave) {
+        saveSettings();
+        showToast(`Theme "${theme.name}" applied`);
+    }
+}
+
+function updateFullThemesUI() {
+    const badge = document.getElementById('active-theme-name-badge');
+    const fullTheme = FULL_THEMES[currentActiveThemeId];
+    if (badge) {
+        badge.textContent = fullTheme ? fullTheme.name : 'Custom';
+    }
+
+    document.querySelectorAll('.full-theme-card').forEach(card => {
+        const isCurrent = card.dataset.themeId === currentActiveThemeId;
+        card.classList.toggle('ring-2', isCurrent);
+        card.classList.toggle('ring-primary', isCurrent);
+        card.classList.toggle('border-primary', isCurrent);
+        card.classList.toggle('shadow-md', isCurrent);
+        const checkIcon = card.querySelector('.theme-check-icon');
+        if (checkIcon) checkIcon.classList.toggle('hidden', !isCurrent);
+    });
+}
+
+function renderFullThemes(category = currentThemeCategory) {
+    currentThemeCategory = category;
+    const grid = document.getElementById('full-themes-grid');
+    if (!grid) return;
+
+    // Update category tabs active state
+    document.querySelectorAll('.theme-category-tab').forEach(tab => {
+        const isTabActive = tab.dataset.category === category;
+        tab.classList.toggle('active', isTabActive);
+        tab.classList.toggle('bg-white', isTabActive);
+        tab.classList.toggle('dark:bg-white/10', isTabActive);
+        tab.classList.toggle('text-primary', isTabActive);
+        tab.classList.toggle('shadow-xs', isTabActive);
+        tab.classList.toggle('text-gray-500', !isTabActive);
+        tab.classList.toggle('dark:text-gray-400', !isTabActive);
+    });
+
+    const themesToRender = Object.values(FULL_THEMES).filter(t => t.category === category);
+
+    grid.innerHTML = themesToRender.map(t => {
+        const isActive = t.id === currentActiveThemeId;
+        return `
+            <button type="button" class="full-theme-card text-left p-2.5 rounded-xl border transition-all duration-150 relative overflow-hidden flex flex-col justify-between group cursor-pointer ${isActive ? 'ring-2 ring-primary border-primary shadow-md' : 'border-gray-200/70 dark:border-white/10 hover:border-primary/50'}"
+                data-theme-id="${t.id}"
+                style="background-color: ${t.bg}; color: ${t.text}; min-height: 88px;">
+                
+                <div class="flex items-start justify-between w-full mb-0.5">
+                    <span class="text-xs font-bold tracking-tight truncate pr-1" style="font-family: '${t.font}', sans-serif;">${t.name}</span>
+                    <span class="w-4 h-4 rounded-full flex items-center justify-center shrink-0 border border-black/10 dark:border-white/20 shadow-xs" style="background-color: ${t.accent.color};">
+                        <svg class="theme-check-icon w-2.5 h-2.5 text-white ${isActive ? '' : 'hidden'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </span>
+                </div>
+
+                <div class="text-[11px] leading-snug opacity-90 truncate w-full my-1 font-normal" style="font-family: '${t.font}', sans-serif;">
+                    In the beginning was the Word
+                </div>
+
+                <div class="flex items-center justify-between text-[10px] font-medium opacity-80 pt-1 border-t border-current/15 w-full mt-auto">
+                    <span class="truncate" style="font-family: '${t.font}', sans-serif;">${t.font}</span>
+                    <span class="text-[8px] font-bold uppercase tracking-wider px-1 py-0.5 rounded bg-black/10 dark:bg-white/10 shrink-0 ml-1">${t.mode}</span>
+                </div>
+            </button>
+        `;
+    }).join('');
+
+    // Attach click events
+    grid.querySelectorAll('.full-theme-card').forEach(card => {
+        card.addEventListener('click', () => {
+            applyFullTheme(card.dataset.themeId);
+        });
+    });
 }
 
 let isOfflineDownloading = false;
@@ -1587,26 +1854,26 @@ window.onload = async () => {
     document.querySelectorAll('.content-width-slider').forEach(slider => { slider.addEventListener('input', (e) => applyContentWidth(e.target.value, true)); slider.addEventListener('change', (e) => applyContentWidth(e.target.value, false)); });
     document.querySelectorAll('.theme-toggle').forEach(btn => btn.addEventListener('click', () => applyTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark'))); document.querySelectorAll('.font-family-select').forEach(sel => sel.addEventListener('change', (e) => applyFontFamily(e.target.value)));
     
-    document.querySelectorAll('.theme-preset-select').forEach(sel => {
-        sel.addEventListener('change', (e) => {
-            const preset = THEME_PRESETS[e.target.value];
-            if (preset) {
-                applyTheme(preset.theme, true);
-                applyCustomColors(preset.bg, preset.text, false);
-            }
+    document.querySelectorAll('.theme-category-tab').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            renderFullThemes(e.currentTarget.dataset.category);
         });
     });
 
     document.querySelectorAll('.custom-bg-picker').forEach(picker => { 
-        const updater = (e) => { applyCustomColors(e.target.value, currentCustomText, false); document.querySelectorAll('.theme-preset-select').forEach(sel => sel.value = 'custom'); }; 
+        const updater = (e) => { applyCustomColors(e.target.value, currentCustomText, false); currentActiveThemeId = 'custom'; updateFullThemesUI(); }; 
         picker.addEventListener('input', updater); picker.addEventListener('change', updater); 
     });
     document.querySelectorAll('.custom-text-picker').forEach(picker => { 
-        const updater = (e) => { applyCustomColors(currentCustomBg, e.target.value, false); document.querySelectorAll('.theme-preset-select').forEach(sel => sel.value = 'custom'); }; 
+        const updater = (e) => { applyCustomColors(currentCustomBg, e.target.value, false); currentActiveThemeId = 'custom'; updateFullThemesUI(); }; 
         picker.addEventListener('input', updater); picker.addEventListener('change', updater); 
     });
     document.querySelectorAll('.reset-colors-btn').forEach(btn => { 
-        btn.addEventListener('click', () => { applyCustomColors(null, null, false); document.querySelectorAll('.theme-preset-select').forEach(sel => sel.value = 'custom'); }); 
+        btn.addEventListener('click', () => { 
+            applyCustomColors(null, null, false); 
+            currentActiveThemeId = document.documentElement.classList.contains('dark') ? 'amoled_black' : 'pure_white'; 
+            updateFullThemesUI(); 
+        }); 
     });
     
     document.querySelectorAll('.accent-picker').forEach(btn => btn.addEventListener('click', (e) => applyAccentColor({ color: e.target.dataset.color, hover: e.target.dataset.hover, glow: e.target.dataset.glow }))); document.querySelectorAll('.custom-accent-picker').forEach(picker => { const updater = (e) => applyAccentColor(generateAccentVariants(e.target.value)); picker.addEventListener('input', updater); picker.addEventListener('change', updater); });
@@ -1642,6 +1909,8 @@ window.onload = async () => {
     document.querySelectorAll('.open-settings-modal-btn').forEach(btn => btn.addEventListener('click', () => {
         settingsModal.classList.remove('hidden');
         if (window.innerWidth < 1024) toggleMobileSidebar(false);
+        renderFullThemes(currentThemeCategory);
+        updateFullThemesUI();
         updateSettingsPreview();
         updateOfflineSectionUI();
     }));
@@ -1936,16 +2205,14 @@ window.onload = async () => {
     await localDB.init(); 
     await loadDataFromLocalDB(); 
     updateSelectionText(lastRead.book, lastRead.chapter);
+    renderFullThemes(currentThemeCategory);
+    updateFullThemesUI();
     updateSettingsPreview();
     updateOfflineSectionUI();
     
     if (initialMessage.style.display !== 'none') {
         loadChapter(lastRead.book, lastRead.chapter, 'clear', lastRead.verse);
     }
-
-    document.querySelectorAll('.pwa-install-btn').forEach(btn => {
-        btn.addEventListener('click', triggerInstallFlow);
-    });
 };
 
 let deferredInstallPrompt = null;

@@ -432,6 +432,35 @@
                     </div>
                 </div>
 
+                <!-- 2. FULL THEMES (Theme + Reading Area + Matching Font) -->
+                <div class="pt-5 border-t border-gray-200 dark:border-white/5">
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Full Themes</label>
+                            <p class="text-[11px] text-gray-400 dark:text-gray-500">Complete styling: UI mode, canvas, accent & curated font</p>
+                        </div>
+                        <span id="active-theme-name-badge" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 shrink-0">AMOLED Black</span>
+                    </div>
+
+                    <!-- Category Tabs: Main | Light | Dark -->
+                    <div class="flex p-1 bg-gray-100 dark:bg-white/5 rounded-xl gap-1 mb-3">
+                        <button type="button" class="theme-category-tab flex-1 py-1.5 px-2 text-xs font-semibold rounded-lg transition-all active bg-white dark:bg-white/10 text-primary shadow-xs" data-category="main">
+                            Main
+                        </button>
+                        <button type="button" class="theme-category-tab flex-1 py-1.5 px-2 text-xs font-semibold rounded-lg transition-all text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" data-category="light">
+                            Light
+                        </button>
+                        <button type="button" class="theme-category-tab flex-1 py-1.5 px-2 text-xs font-semibold rounded-lg transition-all text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" data-category="dark">
+                            Dark
+                        </button>
+                    </div>
+
+                    <!-- Themes Cards Container (rendered by JS) -->
+                    <div id="full-themes-grid" class="grid grid-cols-2 gap-2">
+                        <!-- Populated dynamically by JS -->
+                    </div>
+                </div>
+
                 <!-- Account -->
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-2">Account</label>
@@ -462,27 +491,11 @@
                     </div>
                 </div>
                 
-                <!-- Reading Colors -->
+                <!-- Reading Colors (Custom Color Adjustment) -->
                 <div class="pt-5 border-t border-gray-200 dark:border-white/5">
                     <div class="flex justify-between items-center mb-2">
-                        <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Reading Colors</label>
-                        <select class="theme-preset-select bg-transparent text-[10px] font-bold uppercase tracking-wider text-primary outline-none cursor-pointer">
-                            <option value="custom">Preset Styles...</option>
-                            <optgroup label="Light Styles">
-                                <option value="clean_paper">Clean Paper (Pristine White)</option>
-                                <option value="sepia">Warm Sepia (Vintage Book)</option>
-                                <option value="parchment">Golden Parchment (Manuscript)</option>
-                                <option value="rose_clay">Twilight Rose (Gentle Blush)</option>
-                            </optgroup>
-                            <optgroup label="Dark Styles">
-                                <option value="oled">True OLED Black (Zero Light)</option>
-                                <option value="forest">Forest Sanctuary (Deep Botanical)</option>
-                                <option value="navy">Midnight Navy (Oceanic Dark)</option>
-                                <option value="candlelight">Candlelight Bronze (Warm Ember)</option>
-                                <option value="solarized">Solarized Teal (Petroleum Dark)</option>
-                                <option value="amethyst">Royal Amethyst (Celestial Purple)</option>
-                            </optgroup>
-                        </select>
+                        <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Custom Canvas Colors</label>
+                        <span class="text-[10px] text-gray-400 dark:text-gray-500">Fine-tune background & text</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <div class="flex-1 glass-input p-2 rounded-lg flex flex-col relative overflow-hidden">
