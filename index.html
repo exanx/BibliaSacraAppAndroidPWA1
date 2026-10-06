@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+
+    <!-- App Force Reset Script -->
+    <script>
+        const FORCE_RESET_VERSION = "2.1"; 
+
+        try {
+            if (localStorage.getItem("app_reset_version") !== FORCE_RESET_VERSION) {
+                console.log("Applying global force reset for V2 Sync Update...");
+                localStorage.clear();
+                localStorage.setItem("app_reset_version", FORCE_RESET_VERSION);
+                indexedDB.deleteDatabase("SanctaBibliaDB");
+                indexedDB.deleteDatabase("firebaseLocalStorageDb"); 
+                if ('caches' in window) {
+                    caches.keys().then(names => {
+                        names.forEach(name => caches.delete(name));
+                    });
+                }
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.getRegistrations().then(registrations => {
+                        registrations.forEach(registration => registration.unregister());
+                    });
+                }
+                window.location.reload();
+            }
+        } catch (e) {
+            console.warn("Force reset check skipped:", e);
+        }
+    </script>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Biblia Sacra</title>
+    <meta name="description" content="A modern, distraction-free Bible reading app.">
+	
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+    <meta property="og:title" content="Biblia Sacra">
+    <meta property="og:description" content="A modern, distraction-free Bible reading app.">
+    
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com/">
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&family=Lato:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,500;1,400&family=Merriweather:ital,wght@0,400;0,700;1,400&family=Nunito:wght@400;600&family=Open+Sans:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Quicksand:wght@400;600&family=Roboto:ital,wght@0,400;0,500;1,400&family=Tinos:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            safelist: [
+                'border-yellow-400', 'border-green-400', 'border-blue-400', 'border-pink-400', 'border-purple-400',
+                'bg-yellow-400', 'bg-green-400', 'bg-blue-400', 'bg-pink-400', 'bg-purple-400',
+                'highlight-yellow', 'highlight-green', 'highlight-blue', 'highlight-pink', 'highlight-purple'
+            ],
+            theme: {
+                extend: {
+                    colors: {
+                        primary: 'var(--color-primary)',
+                        'primary-hover': 'var(--color-primary-hover)',
+                        'primary-glow': 'var(--color-primary-glow)',
+                        'surface-dark': '#0a0a0a',
+                        'surface-light': '#ffffff',
+                    },
+                    boxShadow: {
+                        'glow-primary': '0 0 15px var(--color-primary-glow)',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Firebase SDKs V2 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+        try {
+            const firebaseConfig = {
+              apiKey: "AIzaSyCCDq-rvjw_o3APjQRT4EfWRWDFdUgu26Y",
+              authDomain: "sanctabiblia.firebaseapp.com",
+              projectId: "sanctabiblia",
+              storageBucket: "sanctabiblia.appspot.com",
+              messagingSenderId: "695688083334",
+              appId: "1:695688083334:web:3a030b5ade0c8af0061e07"
+            };
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+            
+            // Enable Native Offline Queuing & Resolution
+            enableIndexedDbPersistence(db).catch(err => {
+                console.warn("Firestore Persistence failed:", err.code);
+            });
+
+            window.firebase = { auth: getAuth(app), db, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, doc, setDoc, onSnapshot };
+        } catch (err) {
+            console.warn("Firebase initialization warning:", err);
+            window.firebase = {};
+        }
+    </script>
+
+    <style>
+        :root {
+            --font-size-base: 1.125rem;
+            --line-height-ratio: 1.75;
+            --line-height-base: calc(var(--font-size-base) * var(--line-height-ratio));
+            --font-family-base: 'Inter';
+            --font-weight-base: 400;
+            --content-width: 100;
+            --color-primary: #4f46e5;
+            --color-primary-hover: #4338ca;
+            --color-primary-glow: rgba(79, 70, 229, 0.3);
+        }
+
+        html.dark { color-scheme: dark; }
+        body { font-family: 'Inter', sans-serif; background-color: #f9fafb; color: #111827; overflow-x: hidden; transition: background-color 0.3s ease; }
+        html.dark body { background-color: #000000; color: #e5e5e5; }
+        
+        body[style*="--custom-bg"] { background-color: var(--custom-bg) !important; }
+        body[style*="--custom-text"] #scripture-display, 
+        body[style*="--custom-text"] #scripture-display h2.chapter-heading, 
+        body[style*="--custom-text"] .verse-paragraph {
+            color: var(--custom-text) !important;
+        }
+
+        #main-scroll-area { overflow-anchor: none; scroll-behavior: auto; }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7); 
+            backdrop-filter: blur(24px) saturate(150%); -webkit-backdrop-filter: blur(24px) saturate(150%);
+            border: 1px solid rgba(0, 0, 0, 0.1); 
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1), inset 0 1px 0 0 rgba(255, 255, 255, 0.6);
+        }
+        .dark .glass-panel {
+            background: rgba(18, 18, 20, 0.65); 
+            border: 1px solid rgba(255, 255, 255, 0.12); 
+            box-shadow: 0 10px 40px -5px rgba(0, 0, 0, 0.7), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+        }
+        
+        .glass-nav { 
+            background: rgba(255, 255, 255, 0.75); 
+            backdrop-filter: blur(24px) saturate(150%); -webkit-backdrop-filter: blur(24px) saturate(150%); 
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08); 
+        }
+        .dark .glass-nav { 
+            background: rgba(10, 10, 12, 0.75); 
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1); 
+        }
+
+        .glass-input { background: #ffffff; border: 1px solid #e5e7eb; transition: all 0.2s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+        .dark .glass-input { background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); color: #f3f4f6; }
+        .glass-input:focus-within { border-color: var(--color-primary); box-shadow: 0 0 0 2px var(--color-primary-glow); outline: none; }
+        input.glass-input:focus, select.glass-input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 2px var(--color-primary-glow); outline: none; }
+
+        #scripture-display { font-family: var(--font-family-base), sans-serif; font-size: var(--font-size-base); line-height: var(--line-height-base); font-weight: var(--font-weight-base); }
+        #reading-container { max-width: calc(850px * (var(--content-width) / 100)); transition: max-width 0.3s ease; margin: 0 auto; }
+        @media (max-width: 768px) { #reading-container { max-width: 100% !important; padding-left: 1.25rem; padding-right: 1.25rem; } }
+
+        .verse-paragraph { padding: 0.25rem 0.5rem; margin: 0 -0.5rem 0.5rem -0.5rem; border-radius: 0.5rem; transition: background-color 0.2s ease; }
+        .verse-paragraph:hover { background-color: rgba(0,0,0,0.03); }
+        .dark .verse-paragraph:hover { background-color: rgba(255,255,255,0.04); }
+        .verse-num { font-size: 0.65em; font-weight: 600; color: #9ca3af; margin-right: 0.3em; user-select: none; top: -0.4em; position: relative; padding: 0.1em 0.2em; border-radius: 0.2em; transition: all 0.2s ease; cursor: pointer; }
+        .dark .verse-num { color: #6b7280; }
+        .verse-num:hover { background-color: var(--color-primary-glow); color: var(--color-primary); }
+
+        .btn-primary { background-color: var(--color-primary); color: white; transition: all 0.2s ease; }
+        .btn-primary:hover { background-color: var(--color-primary-hover); box-shadow: 0 4px 12px var(--color-primary-glow); transform: translateY(-1px); }
+        .btn-primary:active { transform: translateY(0); }
+        
+        .btn-secondary { background-color: #f3f4f6; color: #374151; transition: all 0.2s ease; border: 1px solid transparent; }
+        .dark .btn-secondary { background-color: #18181b; color: #d1d5db; border: 1px solid #27272a; }
+        .btn-secondary:hover { background-color: #e5e7eb; }
+        .dark .btn-secondary:hover { background-color: #27272a; border-color: #3f3f46; }
+
+        .sidebar-closed-left { transform: translateX(-100%); }
+        .grid-view-slide { transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .slide-left { transform: translateX(-100%); } .slide-center { transform: translateX(0); } .slide-right { transform: translateX(100%); }
+        .modal-enter { animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes modalFadeIn { from { opacity: 0; transform: scale(0.97) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+        .dark ::-webkit-scrollbar-thumb { background: #3f3f46; }
+
+        .custom-scrollbar::-webkit-scrollbar { height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.5); border-radius: 10px; }
+
+        .ambient-blob { position: fixed; border-radius: 50%; filter: blur(120px); z-index: -1; opacity: 0.15; transition: opacity 0.5s ease; pointer-events: none; }
+        .dark .ambient-blob { opacity: 0.03; }
+        .header-icon-mask { background-color: var(--color-primary); -webkit-mask: url('./sancta.svg') no-repeat center; mask: url('./sancta.svg') no-repeat center; -webkit-mask-size: contain; mask-size: contain; }
+        
+        .mainscreen-icon-mask {
+            -webkit-mask: url('./mainscreen.svg') no-repeat center;
+            mask: url('./mainscreen.svg') no-repeat center;
+            -webkit-mask-size: contain;
+            mask-size: contain;
+        }
+
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type="color"]::-webkit-color-swatch { border: none; border-radius: 4px; }
+        input[type="color"]::-moz-color-swatch { border: none; border-radius: 4px; }
+        
+        .highlight-yellow { background-color: rgba(250, 204, 21, 0.25); } .highlight-green { background-color: rgba(74, 222, 128, 0.25); } .highlight-blue { background-color: rgba(96, 165, 250, 0.25); } .highlight-pink { background-color: rgba(244, 114, 182, 0.25); } .highlight-purple { background-color: rgba(192, 132, 252, 0.25); }
+        .dark .highlight-yellow { background-color: rgba(250, 204, 21, 0.1); } .dark .highlight-green { background-color: rgba(74, 222, 128, 0.1); } .dark .highlight-blue { background-color: rgba(96, 165, 250, 0.1); } .dark .highlight-pink { background-color: rgba(244, 114, 182, 0.1); } .dark .highlight-purple { background-color: rgba(192, 132, 252, 0.1); }
+        
+        .bookmark-visual { border-left: 3px solid var(--color-primary); padding-left: 0.5rem; }
+        
+        .color-swatch { transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); opacity: 0.4; transform: scale(0.85); }
+        .color-swatch:hover { transform: scale(1.05); opacity: 0.8; }
+        .color-swatch.selected { opacity: 1; transform: scale(1.25); box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var(--color-primary); }
+        .dark .color-swatch.selected { box-shadow: 0 0 0 2px #18181b, 0 0 0 4px var(--color-primary); }
+
+        #toast-notification.show { transform: translateY(0); opacity: 1; }
+    </style>
+</head>
+
+<body class="transition-colors duration-300 antialiased selection:bg-primary/20 overflow-hidden text-gray-800 dark:text-gray-200">
+
+    <div class="ambient-blob bg-primary w-96 h-96 top-[-10%] left-[-10%]"></div>
+    <div class="ambient-blob bg-purple-500 w-96 h-96 bottom-[-10%] right-[-10%]"></div>
+
+    <div id="selection-tooltip" class="fixed z-50 hidden glass-panel !bg-white/95 dark:!bg-[#121214]/95 rounded-xl shadow-2xl py-2 px-3.5 text-[11px] font-bold uppercase tracking-wider text-gray-800 dark:text-gray-200 cursor-pointer transform -translate-x-1/2 -translate-y-[120%] transition-all duration-200 opacity-0 pointer-events-none flex items-center gap-2 hover:text-primary dark:hover:text-primary border border-gray-200/60 dark:border-white/10 group backdrop-blur-xl">
+        <svg class="w-4 h-4 text-primary group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path></svg>
+        Lookup
+    </div>
+
+    <!-- Mobile Header -->
+    <header class="fixed top-0 w-full z-30 glass-nav px-4 py-3 flex justify-between items-center lg:hidden transition-transform">
+        <button id="open-mobile-sidebar-btn-floating" class="p-2 -ml-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors" aria-label="Menu">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path></svg>
+        </button>
+        <div class="flex-1 flex flex-col items-center justify-center cursor-pointer open-grid-modal-btn group">
+            <div class="flex items-center gap-1.5">
+                <span class="current-selection-text font-bold text-sm tracking-tight text-gray-900 dark:text-white group-hover:text-primary transition-colors">Genesis 1</span>
+                <svg class="w-4 h-4 text-gray-400 group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.5 8.25l-7.5 7.5-7.5-7.5"></path></svg>
+            </div>
+            <p id="mobile-version-subtitle" class="text-[9px] uppercase tracking-widest font-semibold text-primary mt-0.5">Douay-Rheims</p>
+        </div>
+        <button id="open-highlights-mobile-btn" class="p-2 -mr-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors" aria-label="Notes">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16.5 3.75V16.5L12 14.25 7.5 16.5V3.75m9 0H18A2.25 2.25 0 0120.25 6v12A2.25 2.25 0 0118 20.25H6A2.25 2.25 0 013.75 18V6A2.25 2.25 0 016 3.75h1.5m9 0h-9"></path></svg>
+        </button>
+    </header>
+
+    <!-- Mobile Sidebar -->
+    <div id="mobile-sidebar-container" class="fixed inset-0 z-40 lg:hidden sidebar-closed-left transition-transform duration-300 ease-in-out">
+        <div id="mobile-sidebar-overlay" class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"></div>
+        <div class="sidebar relative flex flex-col w-80 max-w-[85vw] h-full bg-white dark:bg-[#0a0a0a] border-r border-gray-200 dark:border-white/10 shadow-2xl">
+            <div class="flex items-center justify-between p-5 border-b border-gray-100 dark:border-zinc-800/50">
+                <div class="header-icon-mask h-8 w-32" aria-label="Sancta Logo"></div>
+                <button id="close-mobile-sidebar-btn" class="p-2 rounded-full text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div id="mobile-sidebar-controls" class="flex-1 overflow-y-auto p-5 space-y-6"></div>
+            
+            <div class="p-5 border-t border-gray-100 dark:border-white/5 flex flex-col items-center justify-center bg-gray-50/50 dark:bg-black/20 mt-auto">
+                <p class="text-[10px] uppercase tracking-widest font-bold text-gray-400 dark:text-gray-500 mb-1">Biblia Sacra V2.1 Sync</p>
+                <p class="text-[10px] font-medium text-gray-400 dark:text-gray-500">Created by <a href="https://github.com/exanx" target="_blank" class="text-primary hover:underline font-bold">EXANX</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Desktop Layout -->
+    <div class="flex h-screen w-full relative z-10">
+        <aside class="hidden lg:flex flex-col w-[22rem] h-full flex-shrink-0 bg-gray-50/50 dark:bg-[#0a0a0a]/50 border-r border-gray-200 dark:border-white/5 z-20">
+            <div id="desktop-sidebar" class="flex flex-col w-full h-full overflow-hidden">
+                <div class="p-6 border-b border-gray-200 dark:border-white/5 flex flex-col items-center justify-center pt-8">
+                    <div class="header-icon-mask h-10 w-40 mb-2" aria-label="Sancta Logo"></div>
+                    <p class="text-[9px] uppercase tracking-[0.3em] font-semibold text-primary/80">Holy Bible</p>
+                </div>
+                <div id="desktop-sidebar-controls" class="flex-1 overflow-y-auto p-6 space-y-6"></div>
+                
+                <div class="p-5 border-t border-gray-200/60 dark:border-white/5 flex flex-col items-center justify-center bg-gray-50/50 dark:bg-black/20 mt-auto">
+                    <p class="text-[10px] uppercase tracking-widest font-bold text-gray-400 dark:text-gray-500 mb-1">Biblia Sacra V2.1 Sync</p>
+                    <p class="text-[10px] font-medium text-gray-400 dark:text-gray-500">Created by <a href="https://github.com/exanx" target="_blank" class="text-primary hover:underline font-bold">EXANX</a></p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Reading Area -->
+        <div class="flex-1 h-full overflow-y-auto relative" id="main-scroll-area">
+            <div id="reading-container" class="w-full mx-auto pb-32 pt-20 lg:pt-12 px-5 md:px-8 relative min-h-screen flex flex-col">
+                
+                <header class="hidden lg:flex flex-col items-center justify-center mb-10 cursor-pointer group open-grid-modal-btn">
+                    <div class="inline-flex items-center gap-2 text-gray-400 group-hover:text-primary transition-colors">
+                        <span class="current-selection-text text-sm font-semibold tracking-wide text-gray-800 dark:text-gray-200 group-hover:text-primary transition-colors">Genesis 1</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.5 8.25l-7.5 7.5-7.5-7.5"></path></svg>
+                    </div>
+                    <p id="version-subtitle" class="text-[10px] uppercase tracking-widest font-semibold text-gray-500 mt-1">Douay-Rheims Bible</p>
+                </header>
+
+                <main id="content-area" class="flex-1">
+                    <div id="top-sentinel" class="h-4 w-full flex items-center justify-center opacity-0 transition-opacity"></div>
+                    
+                    <div id="scripture-display-wrapper">
+                        <div id="scripture-display" class="max-w-none text-gray-800 dark:text-gray-200 relative">
+                            <div id="initial-message" class="text-center py-32">
+                                <div class="w-28 h-28 mx-auto mb-6 rounded-3xl bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 flex items-center justify-center p-6 shadow-sm">
+                                    <div class="w-full h-full mainscreen-icon-mask bg-gray-800 dark:bg-gray-200"></div>
+                                </div>
+                                <h2 class="text-2xl font-bold mb-2 tracking-tight text-gray-900 dark:text-white">Seek & Find</h2>
+                                <p class="text-gray-500 text-sm max-w-sm mx-auto leading-relaxed">Select a book, chapter, and translation from the menu to begin reading.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="bottom-sentinel" class="h-24 w-full mt-4 flex items-center justify-center opacity-0 transition-opacity"></div>
+                </main>
+                
+                <footer class="text-center mt-16 pt-8 border-t border-gray-200/50 dark:border-white/5 text-sm text-gray-400 dark:text-gray-500 pb-8">
+                    <p>Biblia Sacra V2.1 Sync • Created by <a href="https://github.com/exanx" target="_blank" class="text-primary hover:underline font-semibold">EXANX</a></p>
+                </footer>
+            </div>
+        </div>
+    </div>
+
+    <!-- Template for Clean Dynamic Sidebar -->
+    <template id="sidebar-content-template">
+        <div class="space-y-6">
+            <!-- Search -->
+            <div>
+                <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-2">Search</label>
+                <div class="relative">
+                    <input type="text" class="direct-verse-input glass-input w-full pl-9 pr-3 py-2.5 rounded-lg outline-none text-sm placeholder-gray-400" placeholder="e.g. Jn 3:16">
+                    <svg class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path></svg>
+                    <button class="direct-verse-search-btn absolute right-1.5 top-1/2 -translate-y-1/2 btn-secondary text-[10px] font-bold px-2 py-1 rounded-md">GO</button>
+                </div>
+            </div>
+            
+            <!-- Navigation -->
+            <div>
+                <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-2">Book & Chapter</label>
+                <button class="open-grid-modal-btn w-full btn-primary flex items-center justify-between font-medium py-2.5 px-4 rounded-lg transition-all text-sm">
+                    <span class="current-selection-text">Genesis 1</span>
+                    <svg class="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.5 8.25l-7.5 7.5-7.5-7.5"></path></svg>
+                </button>
+            </div>
+
+            <!-- Version -->
+            <div>
+                <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-2">Translation</label>
+                <select class="translation-select glass-input w-full p-2.5 rounded-lg outline-none text-sm cursor-pointer"></select>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="pt-4 border-t border-gray-200 dark:border-white/5 space-y-1.5">
+                <button class="open-highlights-modal-btn-sidebar w-full flex items-center gap-3 p-2.5 rounded-lg btn-secondary text-sm font-medium"><svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.89 1.147l-3.102.993a.375.375 0 01-.495-.495l.993-3.102a4.5 4.5 0 011.147-1.89l13.418-13.418z"></path></svg> Notes & Highlights</button>
+                <button class="open-bookmarks-modal-btn w-full flex items-center gap-3 p-2.5 rounded-lg btn-secondary text-sm font-medium"><svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17.5 3.5h-11a2 2 0 00-2 2v15l6.5-3 6.5 3v-15a2 2 0 00-2-2z"></path></svg> Bookmarks</button>
+                <button class="open-quote-modal-btn w-full flex items-center gap-3 p-2.5 rounded-lg btn-secondary text-sm font-medium"><svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5z"></path></svg> Create Quote Image</button>
+                
+                <!-- Dict and Wiki Split Buttons -->
+                <div class="flex gap-2 w-full pt-1">
+                    <button class="open-dict-modal-btn flex-1 flex items-center justify-center gap-1.5 p-2 rounded-lg btn-secondary text-xs font-medium"><svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"></path></svg> Dictionary</button>
+                    <button class="open-wiki-modal-btn flex-1 flex items-center justify-center gap-1.5 p-2 rounded-lg btn-secondary text-xs font-medium"><svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 21.5c-3-4.5-3-14.5 0-19"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.5 12h19"></path></svg> Wikipedia</button>
+                </div>
+
+                <!-- Install App (PWA / Android) -->
+                <button class="pwa-install-btn w-full flex items-center justify-center gap-2 p-2.5 rounded-lg btn-primary text-xs font-medium shadow-sm transition-all"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Install App / Android</button>
+
+                <!-- Subtle Settings Button at bottom -->
+                <button class="open-settings-modal-btn w-full flex items-center justify-center gap-1.5 mt-2 py-2 text-[10px] uppercase tracking-widest font-semibold text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors bg-transparent"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> App Settings</button>
+            </div>
+        </div>
+    </template>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden transition-opacity">
+        <div class="glass-panel modal-enter w-full max-w-lg max-h-[90vh] flex flex-col rounded-2xl">
+            <div class="flex justify-between items-center p-5 border-b border-gray-100 dark:border-white/5 bg-white/40 dark:bg-black/40 z-10">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">Settings</h3>
+                <button id="close-settings-modal-btn" class="p-1.5 rounded-full text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-white/10 transition-all"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            
+            <div class="p-5 overflow-y-auto space-y-6">
+                <!-- Account -->
+                <div>
+                    <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-2">Account</label>
+                    <button class="auth-management-btn w-full btn-secondary font-medium py-2.5 px-4 rounded-lg text-sm">Login / Sign Up</button>
+                    <!-- Note: With V2 Sync, manual force push/pull are no longer needed, they happen automatically on connection/login -->
+                </div>
+                
+                <!-- Appearance -->
+                <div class="pt-5 border-t border-gray-200 dark:border-white/5">
+                    <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-2">Appearance</label>
+                    <div class="space-y-3">
+                        <button class="theme-toggle w-full flex items-center justify-between p-2.5 rounded-lg glass-input font-medium text-sm text-gray-700 dark:text-gray-300">
+                            <span class="theme-text">Dark Mode</span>
+                            <svg class="theme-icon-light w-4 h-4 hidden text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path></svg>
+                            <svg class="theme-icon-dark w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                        </button>
+                        
+                        <div class="flex justify-between items-center glass-input p-2 rounded-lg">
+                            <button class="accent-picker w-5 h-5 rounded-full bg-indigo-600 active" data-color="#4f46e5" data-hover="#4338ca" data-glow="rgba(79,70,229,0.3)"></button>
+                            <button class="accent-picker w-5 h-5 rounded-full bg-rose-600" data-color="#e11d48" data-hover="#be123c" data-glow="rgba(225,29,72,0.3)"></button>
+                            <button class="accent-picker w-5 h-5 rounded-full bg-emerald-500" data-color="#10b981" data-hover="#059669" data-glow="rgba(16,185,129,0.3)"></button>
+                            <button class="accent-picker w-5 h-5 rounded-full bg-amber-500" data-color="#f59e0b" data-hover="#d97706" data-glow="rgba(245,158,11,0.3)"></button>
+                            <button class="accent-picker w-5 h-5 rounded-full bg-cyan-500" data-color="#06b6d4" data-hover="#0891b2" data-glow="rgba(6,182,212,0.3)"></button>
+                            <div class="custom-accent-container relative w-5 h-5 rounded-full overflow-hidden cursor-pointer" style="background: conic-gradient(from 180deg, red, yellow, lime, aqua, blue, magenta, red);" title="Custom Color">
+                                <input type="color" class="custom-accent-picker absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 opacity-0 cursor-pointer" value="#a855f7">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Reading Colors -->
+                <div class="pt-5 border-t border-gray-200 dark:border-white/5">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Reading Colors</label>
+                        <select class="theme-preset-select bg-transparent text-[10px] font-bold uppercase tracking-wider text-primary outline-none cursor-pointer">
+                            <option value="custom">Presets...</option>
+                            <option value="default_light">Default Light</option>
+                            <option value="dim">Dim Dark</option>
+                            <option value="sepia">Sepia</option>
+                            <option value="mocha">Mocha</option>
+                            <option value="oled">OLED Black</option>
+                            <option value="navy">Midnight Navy</option>
+                            <option value="parchment">Parchment</option>
+                            <option value="gruvbox">Gruvbox</option>
+                            <option value="nord">Nord</option>
+                            <option value="Greyhound">Greyhound</option>
+                            <option value="rosewater">Rosewater</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="flex-1 glass-input p-2 rounded-lg flex flex-col relative overflow-hidden">
+                            <label class="text-[8px] font-bold uppercase tracking-wider text-gray-400 mb-0.5">Bg Color</label>
+                            <input type="color" class="custom-bg-picker w-full h-6 cursor-pointer bg-transparent border-none p-0 rounded-sm">
+                        </div>
+                        <div class="flex-1 glass-input p-2 rounded-lg flex flex-col relative overflow-hidden">
+                            <label class="text-[8px] font-bold uppercase tracking-wider text-gray-400 mb-0.5">Text Color</label>
+                            <input type="color" class="custom-text-picker w-full h-6 cursor-pointer bg-transparent border-none p-0 rounded-sm">
+                        </div>
+                        <button class="reset-colors-btn glass-input h-[52px] px-3 rounded-lg flex items-center justify-center text-gray-400 hover:text-primary transition-colors" title="Reset Colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Typography -->
+                <div class="pt-5 border-t border-gray-200 dark:border-white/5">
+                    <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-2">Typography</label>
+                    <select class="font-family-select glass-input w-full p-2.5 rounded-lg outline-none mb-3 text-sm">
+                        <!-- Populated by JS -->
+                    </select>
+                    <div class="glass-input rounded-lg flex flex-col divide-y divide-gray-100 dark:divide-white/5">
+                        <div class="flex items-center justify-between p-1">
+                            <div class="flex items-center w-full">
+                                <button class="font-decrease flex-1 p-2 text-gray-500 hover:text-gray-800 dark:hover:text-white transition-colors flex justify-center"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg></button>
+                                <span class="text-xs font-semibold px-2 text-gray-400">SIZE</span>
+                                <button class="font-increase flex-1 p-2 text-gray-500 hover:text-gray-800 dark:hover:text-white transition-colors flex justify-center"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg></button>
+                            </div>
+                            <div class="h-6 w-px bg-gray-200 dark:bg-white/10"></div>
+                            <button class="font-weight-toggle p-2 w-12 text-sm font-bold text-gray-500 hover:text-gray-800 dark:hover:text-white transition-colors flex justify-center">B</button>
+                        </div>
+                        <div class="flex items-center justify-around p-1">
+                            <button class="line-spacing-btn flex-1 p-2 text-gray-400 flex justify-center" data-ratio="1.3" title="Tight"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path></svg></button>
+                            <button class="line-spacing-btn flex-1 p-2 text-primary flex justify-center" data-ratio="1.75" title="Normal"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.75 5h16.5M3.75 12h16.5M3.75 19h16.5"></path></svg></button>
+                            <button class="line-spacing-btn flex-1 p-2 text-gray-400 flex justify-center" data-ratio="2.2" title="Loose"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.75 4h16.5M3.75 12h16.5M3.75 20h16.5"></path></svg></button>
+                        </div>
+                    </div>
+
+                    <!-- Custom Fonts GUI -->
+                    <div class="pt-4 mt-4 border-t border-gray-100 dark:border-white/5">
+                        <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-2">Custom Google Fonts</label>
+                        <div class="flex gap-2 mb-2">
+                            <input type="text" class="custom-font-name glass-input flex-grow p-2.5 rounded-lg text-sm" placeholder="e.g. Oswald, Dancing Script">
+                            <button class="add-custom-font-btn btn-secondary font-medium px-3 rounded-lg text-xs">Add</button>
+                        </div>
+                        <div class="custom-fonts-list space-y-2 empty:hidden"></div>
+                    </div>
+                </div>
+                
+                <!-- Width (Desktop Only) -->
+                <div class="pt-5 border-t border-gray-200 dark:border-white/5 hidden lg:block">
+                    <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-2">Width</label>
+                    <div class="flex items-center gap-3 glass-input p-2.5 rounded-lg">
+                        <span class="text-[9px] font-bold text-gray-400 uppercase">Min</span>
+                        <input type="range" min="50" max="100" value="100" class="content-width-slider w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-zinc-700 accent-primary">
+                        <span class="text-[9px] font-bold text-gray-400 uppercase">Max</span>
+                    </div>
+                </div>
+                
+                <!-- Custom Bibles -->
+                <div class="pt-5 border-t border-gray-200 dark:border-white/5">
+                    <div class="flex items-center gap-1.5 mb-2">
+                        <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Custom Bibles</label>
+                        <button class="custom-bible-help-btn text-gray-400 hover:text-primary transition-colors cursor-help" title="How to use this feature">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </button>
+                    </div>
+                    
+                    <div class="custom-bible-help-content hidden mb-3 p-3 glass-input rounded-lg text-[10px] text-gray-600 dark:text-gray-400 leading-relaxed shadow-sm">
+                        <p class="font-bold text-gray-900 dark:text-white mb-1">How to add a custom translation:</p>
+                        <ol class="list-decimal pl-3 space-y-1 mb-2">
+                            <li>Host a folder of Bible JSON files (one for each book, e.g. <code class="bg-gray-100 dark:bg-white/10 px-1 rounded">Genesis.json</code>) on GitHub Pages.</li>
+                            <li>Paste the hosted folder's URL as the Base URL below.</li>
+                        </ol>
+                        <p>Format rules & templates: <a href="https://github.com/exanx/bible-json" target="_blank" class="text-primary hover:underline font-semibold">github.com/exanx/bible-json</a></p>
+                    </div>
+
+                    <div class="space-y-2 mb-3">
+                        <input type="text" class="custom-bible-name glass-input w-full p-2.5 rounded-lg text-sm" placeholder="Name (e.g., RSV)">
+                        <input type="text" class="custom-bible-url glass-input w-full p-2.5 rounded-lg text-sm" placeholder="Base URL (e.g., https://yourname.github.io/repo/RSV)">
+                        <button class="add-custom-bible-btn w-full btn-secondary font-medium py-2 rounded-lg text-xs">Add Custom Bible</button>
+                    </div>
+                    <div class="custom-bibles-list space-y-2 empty:hidden"></div>
+                </div>
+
+                <!-- Data & Settings -->
+                 <div class="pt-5 border-t border-gray-200 dark:border-white/5">
+                     <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-2">Data & Settings</label>
+                     <div class="flex gap-2 mb-2">
+                         <button class="export-data-btn flex-1 btn-secondary font-medium py-2 rounded-lg text-xs">Export</button>
+                         <button class="import-data-btn flex-1 btn-secondary font-medium py-2 rounded-lg text-xs">Import</button>
+                     </div>
+                     <button class="reset-settings-btn w-full btn-secondary mb-2 font-medium py-2 rounded-lg text-xs">Reset Settings to Default</button>
+                     <button class="reset-app-btn w-full bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 font-medium py-2 rounded-lg transition-colors text-xs">Factory Reset</button>
+                </div>
+
+                <!-- Android & Native Installation -->
+                <div class="pt-5 border-t border-gray-200 dark:border-white/5">
+                    <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-2">Android & Native App</label>
+                    <div class="glass-input p-4 rounded-lg space-y-3">
+                        <button class="pwa-install-btn w-full btn-primary flex items-center justify-center gap-2 font-medium py-2.5 px-4 rounded-lg text-sm shadow-md">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            <span>Install on Android / Device</span>
+                        </button>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                            <strong>Native Android PWA:</strong> Tap the button above or use Chrome's menu (⋮) &gt; <em>Install app</em> to install Biblia Sacra directly to your home screen and app drawer with offline support.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- About & Credits -->
+                <div class="pt-5 border-t border-gray-200 dark:border-white/5 pb-4">
+                    <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-2">About & Credits</label>
+                    <div class="glass-input p-4 rounded-lg space-y-3">
+                        <div class="flex items-center gap-3 border-b border-gray-200/50 dark:border-white/5 pb-3">
+                            <div class="mainscreen-icon-mask bg-primary w-8 h-8"></div>
+                            <div>
+                                <h4 class="text-sm font-bold text-gray-900 dark:text-white leading-tight">Biblia Sacra</h4>
+                                <p class="text-[10px] text-gray-500 uppercase tracking-widest font-semibold mt-0.5">V2.1 Sync Update</p>
+                            </div>
+                        </div>
+                        <div class="text-xs text-gray-600 dark:text-gray-400 space-y-2 leading-relaxed">
+                            <p>Created by <a href="https://github.com/exanx" target="_blank" class="text-primary hover:underline font-bold">EXANX</a>. A modern, distraction-free Bible reading app designed for focus and study.</p>
+                            <p class="font-bold text-gray-800 dark:text-gray-200 mt-2 mb-1">Resources & APIs Used:</p>
+                            <ul class="list-disc pl-4 space-y-1">
+                                <li><a href="https://tailwindcss.com/" target="_blank" class="text-primary hover:underline">Tailwind CSS</a> — Styling</li>
+                                <li><a href="https://firebase.google.com/" target="_blank" class="text-primary hover:underline">Firebase</a> — Cloud Sync & Auth</li>
+                                <li><a href="https://bible-api.com/" target="_blank" class="text-primary hover:underline">Bible-api.com</a> — Scripture Data</li>
+                                <li><a href="https://dictionaryapi.dev/" target="_blank" class="text-primary hover:underline">Free Dictionary API</a> — Definitions</li>
+                                <li><a href="https://en.wikipedia.org/api/rest_v1/" target="_blank" class="text-primary hover:underline">Wikipedia API</a> — Reference Wiki</li>
+                                <li><a href="https://www.pexels.com/api/" target="_blank" class="text-primary hover:underline">Pexels API</a> — Background Images</li>
+                                <li><a href="https://fonts.google.com/" target="_blank" class="text-primary hover:underline">Google Fonts</a> — Typography</li>
+                                <li><a href="https://marked.js.org/" target="_blank" class="text-primary hover:underline">Marked.js</a> — Markdown Notes</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Grid Navigation Modal -->
+    <div id="grid-modal" class="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center p-4 md:p-6 z-50 hidden transition-opacity overflow-hidden">
+        <div class="glass-panel modal-enter w-full max-w-4xl h-[85vh] flex flex-col relative overflow-hidden rounded-2xl">
+            <div class="flex justify-between items-center p-4 border-b border-gray-100 dark:border-white/5 z-10 bg-white/40 dark:bg-black/40">
+                <button id="grid-back-btn" class="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-white/10 transition-all opacity-0 pointer-events-none flex items-center gap-1.5 font-medium text-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 19.5L8.25 12l7.5-7.5"></path></svg> Back
+                </button>
+                <h3 id="grid-modal-title" class="text-lg font-bold text-gray-900 dark:text-white absolute left-1/2 -translate-x-1/2">Select Book</h3>
+                <button id="close-grid-modal-btn" class="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-white/10 transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="relative flex-1 overflow-hidden">
+                <div id="grid-book-view" class="grid-view-slide slide-center absolute inset-0 overflow-y-auto p-4 md:p-8 space-y-8">
+                    <div>
+                        <h4 class="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-4 ml-1">Old Testament</h4>
+                        <div id="ot-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-3"></div>
+                    </div>
+                    <div>
+                        <h4 class="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-4 ml-1 mt-8">New Testament</h4>
+                        <div id="nt-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-3"></div>
+                    </div>
+                </div>
+                <div id="grid-chapter-view" class="grid-view-slide slide-right absolute inset-0 overflow-y-auto p-4 md:p-8">
+                    <div id="chapter-grid" class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2 md:gap-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reference Search Modal (Dictionary & Wikipedia) -->
+    <div id="dict-modal" class="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden transition-opacity">
+        <div class="glass-panel modal-enter w-full max-w-md max-h-[90vh] flex flex-col rounded-2xl overflow-hidden relative">
+            <div class="flex justify-between items-center p-5 border-b border-gray-100 dark:border-white/5 bg-white/40 dark:bg-black/40 z-10">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Reference Search</h3>
+                <button id="close-dict-modal-btn" class="p-1.5 rounded-full text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-white/10 transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-5 border-b border-gray-100 dark:border-white/5 bg-white/20 dark:bg-black/20 z-10">
+                <div class="flex gap-2 mb-3">
+                    <input type="text" id="reference-search-input" class="glass-input flex-grow p-2.5 rounded-lg text-sm outline-none placeholder-gray-400" placeholder="Type a word to search...">
+                    <button id="reference-search-btn" class="btn-primary px-4 rounded-lg text-sm font-medium">Search</button>
+                </div>
+                <div class="flex gap-2">
+                    <button id="tab-dict" class="flex-1 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors bg-primary text-white shadow-sm">Dictionary</button>
+                    <button id="tab-wiki" class="flex-1 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors btn-secondary">Wikipedia</button>
+                </div>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1 bg-white/40 dark:bg-black/40 space-y-5" id="dict-content">
+                <div class="text-center py-6 text-gray-500 text-sm">Search for a word to see its definition or Wikipedia article.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden transition-opacity">
+        <div class="glass-panel modal-enter w-full max-w-sm flex flex-col relative overflow-hidden rounded-2xl">
+            <div class="flex justify-between items-center p-5 border-b border-gray-100 dark:border-white/5 bg-white/40 dark:bg-black/40">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Account Access</h3>
+                <button id="close-login-modal-btn" class="p-1.5 rounded-full text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-white/10 transition-all"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="space-y-1"><label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Email</label><input type="email" id="email-input" class="glass-input w-full p-2.5 rounded-lg text-sm" placeholder="you@example.com"></div>
+                <div class="space-y-1"><label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Password</label><input type="password" id="password-input" class="glass-input w-full p-2.5 rounded-lg text-sm" placeholder="••••••••"></div>
+                <div id="auth-error" class="text-red-500 text-xs font-medium hidden bg-red-50 dark:bg-red-500/10 p-2.5 rounded-lg border border-red-100 dark:border-red-500/20"></div>
+                <div class="flex gap-2 pt-2"><button id="email-login-btn" class="flex-1 btn-primary text-sm font-medium py-2.5 rounded-lg">Login</button><button id="email-signup-btn" class="flex-1 btn-secondary text-sm font-medium py-2.5 rounded-lg">Sign Up</button></div>
+                <div class="relative flex py-2 items-center"><div class="flex-grow border-t border-gray-200 dark:border-white/10"></div><span class="flex-shrink mx-4 text-gray-500 dark:text-gray-400 text-[10px] font-bold uppercase tracking-wider">OR</span><div class="flex-grow border-t border-gray-200 dark:border-white/10"></div></div>
+                <button id="google-login-btn" class="w-full btn-secondary text-sm font-medium py-2.5 rounded-lg flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" viewBox="0 0 48 48"><g><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path><path fill="none" d="M0 0h48v48H0z"></path></g></svg>
+                    Continue with Google
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quote Modal -->
+    <div id="quote-modal" class="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden transition-opacity">
+        <div class="glass-panel modal-enter w-full max-w-md max-h-[90vh] flex flex-col rounded-2xl">
+            <div class="flex justify-between items-center p-5 border-b border-gray-100 dark:border-white/5 bg-white/40 dark:bg-black/40"><h3 class="text-lg font-bold text-gray-900 dark:text-white">Create Quote</h3><button id="close-quote-modal-btn" class="p-1.5 rounded-full text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-white/10 transition-all"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg></button></div>
+            <div class="p-5 overflow-y-auto space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">Book</label><select id="quote-book-select" class="glass-input w-full p-2.5 rounded-lg text-sm outline-none"></select></div>
+                    <div><label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">Chapter</label><select id="quote-chapter-select" class="glass-input w-full p-2.5 rounded-lg text-sm outline-none"></select></div>
+                    <div><label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">From</label><input type="number" id="quote-verse-from" class="glass-input w-full p-2.5 rounded-lg text-sm outline-none" min="1"></div>
+                    <div><label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">To</label><input type="number" id="quote-verse-to" class="glass-input w-full p-2.5 rounded-lg text-sm outline-none" min="1"></div>
+                </div>
+                <div><label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">Version</label><select id="translation-select-quote" class="glass-input w-full p-2.5 rounded-lg text-sm outline-none"></select></div>
+                <hr class="border-gray-200 dark:border-white/10">
+                <div>
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">Typography</label>
+                    <select id="quote-font-select" class="glass-input w-full p-2.5 rounded-lg text-sm outline-none">
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+                 <div class="grid grid-cols-2 gap-3"><div><label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">Background</label><input type="color" id="quote-bg-color" value="#111111" class="glass-input w-full h-10 p-0.5 rounded-lg cursor-pointer"></div><div><label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">Text Color</label><input type="color" id="quote-text-color" value="#FFFFFF" class="glass-input w-full h-10 p-0.5 rounded-lg cursor-pointer"></div></div>
+                
+                <div class="mt-3">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400">Background Image (Pexels)</label>
+                        <button id="clear-bg-image-btn" class="hidden text-[10px] font-bold uppercase text-red-500 hover:text-red-400 transition-colors">Remove Image</button>
+                    </div>
+                    <div class="flex gap-2 mb-2">
+                        <input type="text" id="pexels-search-input" class="glass-input flex-grow p-2.5 rounded-lg text-sm outline-none placeholder-gray-400" placeholder="e.g. nature, mountains, sky">
+                        <button id="pexels-search-btn" class="btn-secondary text-xs font-medium px-3 rounded-lg">Search</button>
+                    </div>
+                    <div id="pexels-results" class="flex gap-2 overflow-x-auto pb-2 hidden custom-scrollbar"></div>
+                </div>
+
+                <button id="generate-and-download-btn" class="w-full bg-gray-900 dark:bg-white text-white dark:text-black font-medium py-2.5 rounded-lg hover:opacity-90 transition-opacity text-sm mt-2">Generate Image</button><div id="quote-loader" class="text-center hidden mt-2 text-sm text-gray-500">Generating...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Highlights Modal -->
+    <div id="highlights-modal" class="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden transition-opacity">
+        <div class="glass-panel modal-enter w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl">
+            <div class="flex justify-between items-center p-5 border-b border-gray-100 dark:border-white/5 bg-white/40 dark:bg-black/40">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Highlights & Notes</h3>
+                <button id="close-highlights-modal-btn" class="p-1.5 rounded-full text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-white/10 transition-all"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <div class="p-5 overflow-y-auto">
+                <div class="relative mb-4"><div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none"><svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path></svg></div><input type="text" id="highlights-search" class="glass-input w-full pl-10 pr-4 py-2.5 rounded-lg outline-none text-sm placeholder-gray-400" placeholder="Search references, text, or tags..."></div>
+                <div id="highlights-category-filter" class="flex flex-wrap gap-1.5 mb-5 pb-5 border-b border-gray-200 dark:border-white/10"></div>
+                <div id="highlights-content" class="space-y-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bookmarks Modal -->
+    <div id="bookmarks-modal" class="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden transition-opacity">
+        <div class="glass-panel modal-enter w-full max-w-sm max-h-[80vh] flex flex-col rounded-2xl">
+            <div class="flex justify-between items-center p-5 border-b border-gray-100 dark:border-white/5 bg-white/40 dark:bg-black/40">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">Saved Bookmarks</h3>
+                <button id="close-bookmarks-modal-btn" class="p-1.5 rounded-full text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-white/10 transition-all"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <div class="p-5 overflow-y-auto"><div id="bookmarks-content" class="space-y-2"></div></div>
+        </div>
+    </div>
+
+    <!-- Verse Action Popup -->
+    <div id="highlight-popup-container" class="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-end md:items-center justify-center p-4 pb-8 md:p-4 hidden transition-opacity">
+        <div id="highlight-popup" class="glass-panel modal-enter w-full max-w-sm overflow-y-auto max-h-[85vh] rounded-3xl md:rounded-2xl">
+            <div class="flex justify-between items-center p-4 border-b border-gray-100 dark:border-white/5 bg-white/40 dark:bg-black/40"><p class="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">Verse Actions</p><button id="close-highlight-popup" class="p-1.5 rounded-full text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-white/10 transition-all"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button></div>
+            <div class="p-5">
+                <div class="grid grid-cols-2 gap-3 mb-4"><div><label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">From</label><input type="number" id="popup-verse-from" class="glass-input w-full p-2 text-sm rounded-lg outline-none" min="1"></div><div><label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">To</label><input type="number" id="popup-verse-to" class="glass-input w-full p-2 text-sm rounded-lg outline-none" min="1"></div></div>
+                <p id="highlight-verse-ref-display" class="text-lg font-bold text-center mb-5 text-primary"></p>
+                <div class="grid grid-cols-2 gap-2 mb-5">
+                    <button id="copy-verse-btn" class="btn-secondary flex items-center justify-center gap-1.5 text-xs font-medium py-2 px-3 rounded-lg"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75"></path></svg> Copy</button>
+                    <button id="share-verse-btn" class="btn-secondary flex items-center justify-center gap-1.5 text-xs font-medium py-2 px-3 rounded-lg"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"></path></svg> Share</button>
+                    <button id="bookmark-verse-btn" class="btn-secondary flex items-center justify-center gap-1.5 text-xs font-medium py-2 px-3 rounded-lg"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17.5 3.5h-11a2 2 0 00-2 2v15l6.5-3 6.5 3v-15a2 2 0 00-2-2z"></path></svg> <span id="bookmark-btn-text">Bookmark</span></button>
+                    <button id="quote-verse-btn" class="btn-secondary flex items-center justify-center gap-1.5 text-xs font-medium py-2 px-3 rounded-lg"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5z"></path></svg> Quote</button>
+                </div>
+                
+                <hr class="my-5 border-gray-200 dark:border-white/10">
+                <div class="flex justify-center gap-4 mb-5">
+                    <button data-color="yellow" class="color-swatch w-7 h-7 bg-yellow-400 rounded-full"></button>
+                    <button data-color="green" class="color-swatch w-7 h-7 bg-green-400 rounded-full"></button>
+                    <button data-color="blue" class="color-swatch w-7 h-7 bg-blue-400 rounded-full"></button>
+                    <button data-color="pink" class="color-swatch w-7 h-7 bg-pink-400 rounded-full"></button>
+                    <button data-color="purple" class="color-swatch w-7 h-7 bg-purple-400 rounded-full"></button>
+                </div>
+                
+                <div class="note-container mb-4">
+                    <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Note</label>
+                    <textarea id="highlight-note-input" class="glass-input w-full p-3 rounded-xl text-sm outline-none placeholder-gray-400 resize-y min-h-[80px]" placeholder="Add a markdown note..."></textarea>
+                </div>
+                
+                <div class="mb-4"><select id="highlight-category-select" class="glass-input w-full p-2.5 rounded-lg text-sm outline-none"></select></div>
+                <div class="flex gap-2 mb-6">
+                    <input type="text" id="new-category-input" class="glass-input flex-grow p-2.5 rounded-lg text-sm outline-none placeholder-gray-400" placeholder="New Tag">
+                    <button id="add-category-btn" class="btn-secondary text-xs font-medium px-3 rounded-lg">Add</button>
+                </div>
+                <div class="flex gap-2">
+                    <button id="save-highlight-btn" class="flex-1 btn-primary text-sm font-medium py-2.5 rounded-lg">Save</button>
+                    <button id="remove-highlight-btn" class="flex-1 bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 text-sm font-medium py-2.5 rounded-lg transition-colors">Remove</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="toast-notification" class="fixed bottom-10 right-6 md:right-10 bg-gray-900 dark:bg-white text-white dark:text-black text-sm font-medium py-3 px-5 rounded-xl shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 ease-out z-[60]">
+        Copied to clipboard!
+    </div>
+    
+    <input type="file" id="import-file-input" accept=".json" class="hidden">
+
+    <script src="app.js"></script>
+</body>
+</html>

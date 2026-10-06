@@ -1,0 +1,33 @@
+{
+  "id": "/",
+  "name": "Biblia Sacra",
+  "short_name": "Biblia Sacra",
+  "description": "A modern Bible reading app with personal notes and highlights.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "categories": ["books", "lifestyle", "education"],
+  "icons": [
+    {
+      "src": "/appicon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/appicon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/appicon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
