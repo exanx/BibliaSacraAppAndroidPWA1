@@ -37,20 +37,32 @@
     <meta name="description" content="A modern, distraction-free Bible reading app.">
 	
     <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+    <link rel="alternate icon" href="./favicon.ico">
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="./icon-192.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="./icon-512.png">
     <meta property="og:title" content="Biblia Sacra">
     <meta property="og:description" content="A modern, distraction-free Bible reading app.">
+    <meta property="og:image" content="/screenshot-desktop.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Biblia Sacra">
+    <meta name="twitter:description" content="A modern, distraction-free Bible reading app.">
+    <meta name="twitter:image" content="/screenshot-desktop.png">
     
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#000000">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Biblia Sacra">
     
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com/">
     <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
-    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&family=Lato:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,500;1,400&family=Merriweather:ital,wght@0,400;0,700;1,400&family=Nunito:wght@400;600&family=Open+Sans:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Quicksand:wght@400;600&family=Roboto:ital,wght@0,400;0,500;1,400&family=Tinos:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&family=Lato:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,500;1,400&family=Merriweather:ital,wght@0,400;0,700;1,400&family=Nunito:wght@400;600&family=Open+Sans:ital,wght@0,400;0,600;1,400&family=Oswald:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Quicksand:wght@400;600&family=Roboto:ital,wght@0,400;0,500;1,400&family=Tinos:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 
     <script>
         tailwind.config = {
@@ -370,9 +382,6 @@
                     <button class="open-wiki-modal-btn flex-1 flex items-center justify-center gap-1.5 p-2 rounded-lg btn-secondary text-xs font-medium"><svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 21.5c-3-4.5-3-14.5 0-19"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.5 12h19"></path></svg> Wikipedia</button>
                 </div>
 
-                <!-- Install App (PWA / Android) -->
-                <button class="pwa-install-btn w-full flex items-center justify-center gap-2 p-2.5 rounded-lg btn-primary text-xs font-medium shadow-sm transition-all"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Install App / Android</button>
-
                 <!-- Subtle Settings Button at bottom -->
                 <button class="open-settings-modal-btn w-full flex items-center justify-center gap-1.5 mt-2 py-2 text-[10px] uppercase tracking-widest font-semibold text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors bg-transparent"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> App Settings</button>
             </div>
@@ -404,21 +413,15 @@
                     </div>
                     
                     <!-- Simulated viewport wrapper showing responsive margins -->
-                    <div class="w-full bg-gray-100/70 dark:bg-black/50 rounded-xl p-3 flex justify-center items-center overflow-hidden transition-all min-h-[170px]">
+                    <div class="w-full bg-gray-100/70 dark:bg-black/50 rounded-xl p-3 flex justify-center items-center overflow-hidden transition-all min-h-[150px]">
                         <div id="settings-preview-box" class="rounded-xl p-4 transition-all duration-200 shadow-md border border-gray-200/60 dark:border-white/5 overflow-hidden" style="width: 100%;">
-                            <h4 id="preview-heading" class="text-base md:text-lg font-bold mb-2 tracking-tight transition-colors">Genesis 1:1–3</h4>
+                            <h4 id="preview-heading" class="text-base md:text-lg font-bold mb-2 tracking-tight transition-colors">John 1:1–2</h4>
                             <div id="preview-text" class="space-y-1.5 transition-all text-sm leading-relaxed">
                                 <p class="preview-verse leading-relaxed">
-                                    <sup class="font-bold text-[10px] text-gray-400 select-none mr-1">1</sup>
-                                    In the beginning God created heaven, and earth.
+                                    <sup class="font-bold text-[10px] text-gray-400 select-none mr-1">1</sup>In the beginning was the Word, and the Word was with God, and the Word was God.
                                 </p>
                                 <p class="preview-verse leading-relaxed">
-                                    <sup class="font-bold text-[10px] text-gray-400 select-none mr-1">2</sup>
-                                    And the earth was void and empty, and darkness was upon the face of the deep: and the Spirit of God moved over the waters.
-                                </p>
-                                <p class="preview-verse leading-relaxed">
-                                    <sup class="font-bold text-[10px] text-gray-400 select-none mr-1">3</sup>
-                                    <span id="preview-sample-highlight" class="highlight-yellow px-1 py-0.5 rounded transition-all">And God said: Be light made. And light was made.</span>
+                                    <sup class="font-bold text-[10px] text-gray-400 select-none mr-1">2</sup><span id="preview-sample-highlight" class="highlight-yellow px-1 py-0.5 rounded transition-all">The same was in the beginning with God.</span>
                                 </p>
                             </div>
                         </div>
@@ -464,17 +467,21 @@
                     <div class="flex justify-between items-center mb-2">
                         <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Reading Colors</label>
                         <select class="theme-preset-select bg-transparent text-[10px] font-bold uppercase tracking-wider text-primary outline-none cursor-pointer">
-                            <option value="custom">Presets...</option>
-                            <option value="default_light">Default Light</option>
-                            <option value="dim">Dim Dark</option>
-                            <option value="sepia">Sepia</option>
-                            <option value="mocha">Mocha</option>
-                            <option value="oled">OLED Black</option>
-                            <option value="navy">Midnight Navy</option>
-                            <option value="parchment">Parchment</option>
-                            <option value="gruvbox">Gruvbox</option>
-                            <option value="nord">Nord</option>
-                            <option value="rosewater">Rosewater</option>
+                            <option value="custom">Preset Styles...</option>
+                            <optgroup label="Light Styles">
+                                <option value="clean_paper">Clean Paper (Pristine White)</option>
+                                <option value="sepia">Warm Sepia (Vintage Book)</option>
+                                <option value="parchment">Golden Parchment (Manuscript)</option>
+                                <option value="rose_clay">Twilight Rose (Gentle Blush)</option>
+                            </optgroup>
+                            <optgroup label="Dark Styles">
+                                <option value="oled">True OLED Black (Zero Light)</option>
+                                <option value="forest">Forest Sanctuary (Deep Botanical)</option>
+                                <option value="navy">Midnight Navy (Oceanic Dark)</option>
+                                <option value="candlelight">Candlelight Bronze (Warm Ember)</option>
+                                <option value="solarized">Solarized Teal (Petroleum Dark)</option>
+                                <option value="amethyst">Royal Amethyst (Celestial Purple)</option>
+                            </optgroup>
                         </select>
                     </div>
                     <div class="flex items-center gap-2">
@@ -647,19 +654,6 @@
                      <button class="reset-app-btn w-full bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 font-medium py-2 rounded-lg transition-colors text-xs">Factory Reset</button>
                 </div>
 
-                <!-- Android & Native Installation -->
-                <div class="pt-5 border-t border-gray-200 dark:border-white/5">
-                    <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-2">Android & Native App</label>
-                    <div class="glass-input p-4 rounded-lg space-y-3">
-                        <button class="pwa-install-btn w-full btn-primary flex items-center justify-center gap-2 font-medium py-2.5 px-4 rounded-lg text-sm shadow-md">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                            <span>Install on Android / Device</span>
-                        </button>
-                        <p class="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                            <strong>Native Android PWA:</strong> Tap the button above or use Chrome's menu (⋮) &gt; <em>Install app</em> to install Biblia Sacra directly to your home screen and app drawer with offline support.
-                        </p>
-                    </div>
-                </div>
 
                 <!-- About & Credits -->
                 <div class="pt-5 border-t border-gray-200 dark:border-white/5 pb-4">

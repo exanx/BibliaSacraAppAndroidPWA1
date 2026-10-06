@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v1.0.0';
+const CACHE_VERSION = 'v1.0.1';
 const APP_CACHE = `biblia-app-${CACHE_VERSION}`;
 const DATA_CACHE = `biblia-data-${CACHE_VERSION}`;
 
@@ -10,7 +10,14 @@ const CORE_ASSETS = [
     './offline.html',
     './manifest.json',
     './favicon.svg',
+    './favicon.ico',
+    './apple-touch-icon.png',
     './sancta.svg',
+    './icon-192.png',
+    './icon-512.png',
+    './icon-maskable-512.png',
+    './screenshot-desktop.png',
+    './screenshot-mobile.png',
     
     // CDNs (Pre-cache core libraries for offline functionality)
     'https://cdn.tailwindcss.com',

@@ -8,8 +8,8 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Serve static assets from project root
-app.use(express.static(__dirname));
+// Serve static assets from project root (allowing dotfiles for .well-known/assetlinks.json)
+app.use(express.static(__dirname, { dotfiles: 'allow' }));
 
 // Single Page Application fallback
 app.get('*', (req, res) => {

@@ -62,17 +62,21 @@ const localDB = {
 };
 
 const THEME_PRESETS = {
-    default_light: { theme: 'light', bg: null, text: null },
-    dim: { theme: 'dark', bg: '#1c1c1e', text: '#e5e5ea' },
-    sepia: { theme: 'light', bg: '#f4ecd8', text: '#5b4636' },
-    mocha: { theme: 'dark', bg: '#292524', text: '#d6d3d1' },
-    oled: { theme: 'dark', bg: '#000000', text: '#d1d5db' },
-    navy: { theme: 'dark', bg: '#0f172a', text: '#e2e8f0' },
-    parchment: { theme: 'light', bg: '#fdf6e3', text: '#657b83' },
-    gruvbox: { theme: 'dark', bg: '#282828', text: '#ebdbb2' },
-    nord: { theme: 'dark', bg: '#121212', text: '#c9c9c9' },
-    dracula: { theme: 'dark', bg: '#282a36', text: '#f8f8f2' },
-    rosewater: { theme: 'light', bg: '#fff0f5', text: '#4a0e4e' }
+    clean_paper: { theme: 'light', bg: '#ffffff', text: '#18181b', name: 'Clean Paper' },
+    sepia: { theme: 'light', bg: '#f4ecd8', text: '#45321f', name: 'Warm Sepia' },
+    parchment: { theme: 'light', bg: '#fef3c7', text: '#3f2e1a', name: 'Golden Parchment' },
+    rose_clay: { theme: 'light', bg: '#fcefe8', text: '#4c2830', name: 'Twilight Rose' },
+    oled: { theme: 'dark', bg: '#000000', text: '#e4e4e7', name: 'True OLED Black' },
+    forest: { theme: 'dark', bg: '#0c1f15', text: '#d1fae5', name: 'Forest Sanctuary' },
+    navy: { theme: 'dark', bg: '#0b172a', text: '#dbeafe', name: 'Midnight Navy' },
+    candlelight: { theme: 'dark', bg: '#1e140d', text: '#fed7aa', name: 'Candlelight Bronze' },
+    solarized: { theme: 'dark', bg: '#04202c', text: '#a7f3d0', name: 'Solarized Teal' },
+    amethyst: { theme: 'dark', bg: '#170b22', text: '#ede9fe', name: 'Royal Amethyst' },
+    // Backwards-compatible aliases
+    default_light: { theme: 'light', bg: '#ffffff', text: '#18181b', name: 'Clean Paper' },
+    dim: { theme: 'dark', bg: '#1e140d', text: '#fed7aa', name: 'Candlelight Bronze' },
+    mocha: { theme: 'dark', bg: '#0c1f15', text: '#d1fae5', name: 'Forest Sanctuary' },
+    rosewater: { theme: 'light', bg: '#fcefe8', text: '#4c2830', name: 'Twilight Rose' }
 };
 
 const scriptureDisplay = document.getElementById('scripture-display'), initialMessage = document.getElementById('initial-message'), versionSubtitle = document.getElementById('version-subtitle');
@@ -447,33 +451,38 @@ function updateFontDropdowns() {
         const currentVal = select.value || currentFontFamily;
         let html = `
             <optgroup label="Sans-Serif">
-                <option value="Inter">Inter (Modern)</option>
-                <option value="Roboto">Roboto (Clean)</option>
-                <option value="Open Sans">Open Sans (Neutral)</option>
-                <option value="Lato">Lato (Warm)</option>
-                <option value="Nunito">Nunito (Rounded)</option>
-                <option value="Quicksand">Quicksand (Soft)</option>
+                <option value="Inter" style="font-family: 'Inter', sans-serif;">Inter (Modern)</option>
+                <option value="Roboto" style="font-family: 'Roboto', sans-serif;">Roboto (Clean)</option>
+                <option value="Open Sans" style="font-family: 'Open Sans', sans-serif;">Open Sans (Neutral)</option>
+                <option value="Lato" style="font-family: 'Lato', sans-serif;">Lato (Warm)</option>
+                <option value="Nunito" style="font-family: 'Nunito', sans-serif;">Nunito (Rounded)</option>
+                <option value="Quicksand" style="font-family: 'Quicksand', sans-serif;">Quicksand (Soft)</option>
+            </optgroup>
+            <optgroup label="Condensed & Bold">
+                <option value="Oswald" style="font-family: 'Oswald', sans-serif; font-weight: 600;">Oswald (Impactful / Condensed)</option>
             </optgroup>
             <optgroup label="Serif">
-                <option value="Lora">Lora (Elegant)</option>
-                <option value="Merriweather">Merriweather (Readable)</option>
-                <option value="Tinos">Tinos (Classic)</option>
-                <option value="Crimson Pro">Crimson Pro (Traditional)</option>
-                <option value="Playfair Display">Playfair (Display)</option>
+                <option value="Lora" style="font-family: 'Lora', serif;">Lora (Elegant)</option>
+                <option value="Merriweather" style="font-family: 'Merriweather', serif;">Merriweather (Readable)</option>
+                <option value="Tinos" style="font-family: 'Tinos', serif;">Tinos (Classic)</option>
+                <option value="Crimson Pro" style="font-family: 'Crimson Pro', serif;">Crimson Pro (Traditional)</option>
+                <option value="Playfair Display" style="font-family: 'Playfair Display', serif;">Playfair (Display)</option>
             </optgroup>
         `;
         if (customFonts.length > 0) {
             html += `<optgroup label="Custom Google Fonts">`;
             customFonts.forEach(font => {
-                html += `<option value="${font}">${font}</option>`;
+                html += `<option value="${font}" style="font-family: '${font}', sans-serif;">${font}</option>`;
             });
             html += `</optgroup>`;
         }
         select.innerHTML = html;
         if (select.querySelector(`option[value="${currentVal}"]`)) {
             select.value = currentVal;
+            select.style.fontFamily = `"${currentVal}", sans-serif`;
         } else {
             select.value = 'Inter';
+            select.style.fontFamily = '"Inter", sans-serif';
             currentFontFamily = 'Inter';
         }
     });
@@ -485,34 +494,38 @@ function updateQuoteFontDropdown() {
     const currentVal = select.value;
     let html = `
         <optgroup label="Sans-Serif">
-            <option value="Inter">Inter</option>
-            <option value="Roboto">Roboto</option>
-            <option value="Open Sans">Open Sans</option>
-            <option value="Lato">Lato</option>
-            <option value="Nunito">Nunito</option>
-            <option value="Quicksand">Quicksand</option>
+            <option value="Inter" style="font-family: 'Inter', sans-serif;">Inter</option>
+            <option value="Roboto" style="font-family: 'Roboto', sans-serif;">Roboto</option>
+            <option value="Open Sans" style="font-family: 'Open Sans', sans-serif;">Open Sans</option>
+            <option value="Lato" style="font-family: 'Lato', sans-serif;">Lato</option>
+            <option value="Nunito" style="font-family: 'Nunito', sans-serif;">Nunito</option>
+            <option value="Quicksand" style="font-family: 'Quicksand', sans-serif;">Quicksand</option>
+        </optgroup>
+        <optgroup label="Condensed & Bold">
+            <option value="Oswald" style="font-family: 'Oswald', sans-serif; font-weight: 600;">Oswald</option>
         </optgroup>
         <optgroup label="Serif">
-            <option value="Lora">Lora</option>
-            <option value="Merriweather">Merriweather</option>
-            <option value="Tinos">Tinos</option>
-            <option value="Crimson Pro">Crimson Pro</option>
-            <option value="Playfair Display">Playfair</option>
+            <option value="Lora" style="font-family: 'Lora', serif;">Lora</option>
+            <option value="Merriweather" style="font-family: 'Merriweather', serif;">Merriweather</option>
+            <option value="Tinos" style="font-family: 'Tinos', serif;">Tinos</option>
+            <option value="Crimson Pro" style="font-family: 'Crimson Pro', serif;">Crimson Pro</option>
+            <option value="Playfair Display" style="font-family: 'Playfair Display', serif;">Playfair</option>
         </optgroup>
         <optgroup label="Handwriting">
-            <option value="Caveat">Caveat</option>
+            <option value="Caveat" style="font-family: 'Caveat', cursive;">Caveat</option>
         </optgroup>
     `;
     if (customFonts.length > 0) {
         html += `<optgroup label="Custom Google Fonts">`;
         customFonts.forEach(font => {
-            html += `<option value="${font}">${font}</option>`;
+            html += `<option value="${font}" style="font-family: '${font}', sans-serif;">${font}</option>`;
         });
         html += `</optgroup>`;
     }
     select.innerHTML = html;
     if (select.querySelector(`option[value="${currentVal}"]`)) {
         select.value = currentVal;
+        select.style.fontFamily = `"${currentVal}", sans-serif`;
     }
 }
 
@@ -881,8 +894,20 @@ function updateSettingsPreview() {
     previewBox.style.lineHeight = `${currentLineRatio}`;
     if (previewText) {
         previewText.style.fontSize = `${currentFontSize * 0.95}rem`;
+        // Strictly ensure preview only shows 2 verses (John 1:1–2)
+        if (!previewText.querySelector('.preview-verse')) {
+            previewText.innerHTML = `
+                <p class="preview-verse leading-relaxed">
+                    <sup class="font-bold text-[10px] text-gray-400 select-none mr-1">1</sup>In the beginning was the Word, and the Word was with God, and the Word was God.
+                </p>
+                <p class="preview-verse leading-relaxed">
+                    <sup class="font-bold text-[10px] text-gray-400 select-none mr-1">2</sup><span id="preview-sample-highlight" class="highlight-yellow px-1 py-0.5 rounded transition-all">The same was in the beginning with God.</span>
+                </p>
+            `;
+        }
     }
     if (previewHeading) {
+        previewHeading.textContent = "John 1:1–2";
         previewHeading.style.fontFamily = `"${currentFontFamily}", sans-serif`;
     }
     if (fontLabel) fontLabel.textContent = currentFontFamily;
@@ -1152,7 +1177,10 @@ function changeFontSize(amount, skipSave = false) {
 function applyFontFamily(fontName, skipSave = false) { 
     currentFontFamily = fontName; 
     document.documentElement.style.setProperty('--font-family-base', `"${fontName}"`); 
-    document.querySelectorAll('.font-family-select').forEach(el => el.value = fontName); 
+    document.querySelectorAll('.font-family-select').forEach(el => {
+        el.value = fontName;
+        el.style.fontFamily = `"${fontName}", sans-serif`;
+    }); 
     updateSettingsPreview();
     if(!skipSave) saveSettings(); 
 }
