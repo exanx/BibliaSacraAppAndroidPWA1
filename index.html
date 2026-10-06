@@ -226,6 +226,12 @@
 
 <body class="transition-colors duration-300 antialiased selection:bg-primary/20 overflow-hidden text-gray-800 dark:text-gray-200">
 
+    <!-- Global Offline Connectivity Banner -->
+    <div id="offline-network-banner" class="fixed top-14 left-1/2 -translate-x-1/2 z-50 bg-amber-600 dark:bg-amber-500 text-white text-xs font-semibold py-1.5 px-4 rounded-full shadow-xl flex items-center gap-2 transition-all duration-300 opacity-0 pointer-events-none -translate-y-4">
+        <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+        <span id="offline-network-text">Offline Mode — Reading from device cache</span>
+    </div>
+
     <div class="ambient-blob bg-primary w-96 h-96 top-[-10%] left-[-10%]"></div>
     <div class="ambient-blob bg-purple-500 w-96 h-96 bottom-[-10%] right-[-10%]"></div>
 
@@ -375,13 +381,54 @@
 
     <!-- Settings Modal -->
     <div id="settings-modal" class="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden transition-opacity">
-        <div class="glass-panel modal-enter w-full max-w-lg max-h-[90vh] flex flex-col rounded-2xl">
+        <div class="glass-panel modal-enter w-full max-w-xl max-h-[92vh] flex flex-col rounded-2xl shadow-2xl overflow-hidden">
             <div class="flex justify-between items-center p-5 border-b border-gray-100 dark:border-white/5 bg-white/40 dark:bg-black/40 z-10">
-                <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">Settings</h3>
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">Settings & Reading Experience</h3>
                 <button id="close-settings-modal-btn" class="p-1.5 rounded-full text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-white/10 transition-all"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
             </div>
             
             <div class="p-5 overflow-y-auto space-y-6">
+
+                <!-- 1. LIVE READING PREVIEW CARD -->
+                <div class="settings-preview-container rounded-2xl p-4 glass-input border border-gray-200/80 dark:border-white/10 shadow-sm relative overflow-hidden">
+                    <div class="flex items-center justify-between mb-3 pb-2 border-b border-gray-100 dark:border-white/5">
+                        <div class="flex items-center gap-2">
+                            <span class="inline-flex items-center justify-center w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span class="text-[10px] font-bold uppercase tracking-[0.15em] text-gray-500 dark:text-gray-400">Live Reading Preview</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-[10px] font-medium text-gray-400 dark:text-gray-500 font-mono">
+                            <span id="preview-font-label" class="text-primary font-semibold">Inter</span>
+                            <span>•</span>
+                            <span id="preview-width-label">100% width</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Simulated viewport wrapper showing responsive margins -->
+                    <div class="w-full bg-gray-100/70 dark:bg-black/50 rounded-xl p-3 flex justify-center items-center overflow-hidden transition-all min-h-[170px]">
+                        <div id="settings-preview-box" class="rounded-xl p-4 transition-all duration-200 shadow-md border border-gray-200/60 dark:border-white/5 overflow-hidden" style="width: 100%;">
+                            <h4 id="preview-heading" class="text-base md:text-lg font-bold mb-2 tracking-tight transition-colors">Genesis 1:1–3</h4>
+                            <div id="preview-text" class="space-y-1.5 transition-all text-sm leading-relaxed">
+                                <p class="preview-verse leading-relaxed">
+                                    <sup class="font-bold text-[10px] text-gray-400 select-none mr-1">1</sup>
+                                    In the beginning God created heaven, and earth.
+                                </p>
+                                <p class="preview-verse leading-relaxed">
+                                    <sup class="font-bold text-[10px] text-gray-400 select-none mr-1">2</sup>
+                                    And the earth was void and empty, and darkness was upon the face of the deep: and the Spirit of God moved over the waters.
+                                </p>
+                                <p class="preview-verse leading-relaxed">
+                                    <sup class="font-bold text-[10px] text-gray-400 select-none mr-1">3</sup>
+                                    <span id="preview-sample-highlight" class="highlight-yellow px-1 py-0.5 rounded transition-all">And God said: Be light made. And light was made.</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center text-[10px] text-gray-400 dark:text-gray-500 mt-2 px-1">
+                        <span>Font, width, themes & custom colors apply instantly</span>
+                        <span id="preview-theme-indicator" class="font-semibold text-primary">Default</span>
+                    </div>
+                </div>
+
                 <!-- Account -->
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-2">Account</label>
@@ -427,7 +474,6 @@
                             <option value="parchment">Parchment</option>
                             <option value="gruvbox">Gruvbox</option>
                             <option value="nord">Nord</option>
-                            <option value="Greyhound">Greyhound</option>
                             <option value="rosewater">Rosewater</option>
                         </select>
                     </div>
@@ -455,17 +501,17 @@
                     <div class="glass-input rounded-lg flex flex-col divide-y divide-gray-100 dark:divide-white/5">
                         <div class="flex items-center justify-between p-1">
                             <div class="flex items-center w-full">
-                                <button class="font-decrease flex-1 p-2 text-gray-500 hover:text-gray-800 dark:hover:text-white transition-colors flex justify-center"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg></button>
-                                <span class="text-xs font-semibold px-2 text-gray-400">SIZE</span>
-                                <button class="font-increase flex-1 p-2 text-gray-500 hover:text-gray-800 dark:hover:text-white transition-colors flex justify-center"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg></button>
+                                <button class="font-decrease flex-1 p-2 text-gray-500 hover:text-gray-800 dark:hover:text-white transition-colors flex justify-center" title="Decrease font size"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg></button>
+                                <span class="font-size-display text-xs font-bold px-2 text-primary font-mono">18px</span>
+                                <button class="font-increase flex-1 p-2 text-gray-500 hover:text-gray-800 dark:hover:text-white transition-colors flex justify-center" title="Increase font size"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg></button>
                             </div>
                             <div class="h-6 w-px bg-gray-200 dark:bg-white/10"></div>
-                            <button class="font-weight-toggle p-2 w-12 text-sm font-bold text-gray-500 hover:text-gray-800 dark:hover:text-white transition-colors flex justify-center">B</button>
+                            <button class="font-weight-toggle p-2 w-12 text-sm font-bold text-gray-500 hover:text-gray-800 dark:hover:text-white transition-colors flex justify-center" title="Bold text">B</button>
                         </div>
                         <div class="flex items-center justify-around p-1">
-                            <button class="line-spacing-btn flex-1 p-2 text-gray-400 flex justify-center" data-ratio="1.3" title="Tight"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path></svg></button>
-                            <button class="line-spacing-btn flex-1 p-2 text-primary flex justify-center" data-ratio="1.75" title="Normal"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.75 5h16.5M3.75 12h16.5M3.75 19h16.5"></path></svg></button>
-                            <button class="line-spacing-btn flex-1 p-2 text-gray-400 flex justify-center" data-ratio="2.2" title="Loose"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.75 4h16.5M3.75 12h16.5M3.75 20h16.5"></path></svg></button>
+                            <button class="line-spacing-btn flex-1 p-2 text-gray-400 flex justify-center" data-ratio="1.3" title="Tight line height"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path></svg></button>
+                            <button class="line-spacing-btn flex-1 p-2 text-primary flex justify-center" data-ratio="1.75" title="Normal line height"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.75 5h16.5M3.75 12h16.5M3.75 19h16.5"></path></svg></button>
+                            <button class="line-spacing-btn flex-1 p-2 text-gray-400 flex justify-center" data-ratio="2.2" title="Loose line height"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.75 4h16.5M3.75 12h16.5M3.75 20h16.5"></path></svg></button>
                         </div>
                     </div>
 
@@ -480,13 +526,87 @@
                     </div>
                 </div>
                 
-                <!-- Width (Desktop Only) -->
-                <div class="pt-5 border-t border-gray-200 dark:border-white/5 hidden lg:block">
-                    <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-2">Width</label>
-                    <div class="flex items-center gap-3 glass-input p-2.5 rounded-lg">
-                        <span class="text-[9px] font-bold text-gray-400 uppercase">Min</span>
-                        <input type="range" min="50" max="100" value="100" class="content-width-slider w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-zinc-700 accent-primary">
-                        <span class="text-[9px] font-bold text-gray-400 uppercase">Max</span>
+                <!-- Reading Area Width (Available on all devices) -->
+                <div class="pt-5 border-t border-gray-200 dark:border-white/5">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Reading Area Width</label>
+                        <span class="content-width-display text-[11px] font-bold text-primary font-mono">100%</span>
+                    </div>
+                    <div class="glass-input p-3 rounded-lg space-y-2.5">
+                        <div class="flex items-center gap-3">
+                            <span class="text-[9px] font-bold text-gray-400 uppercase">Min</span>
+                            <input type="range" min="50" max="100" value="100" class="content-width-slider w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-zinc-700 accent-primary">
+                            <span class="text-[9px] font-bold text-gray-400 uppercase">Max</span>
+                        </div>
+                        <div class="flex gap-1.5 pt-1">
+                            <button type="button" class="width-preset-btn flex-1 py-1 px-2 rounded-md btn-secondary text-[10px] font-medium transition-all" data-width="60">Compact (60%)</button>
+                            <button type="button" class="width-preset-btn flex-1 py-1 px-2 rounded-md btn-secondary text-[10px] font-medium transition-all" data-width="80">Balanced (80%)</button>
+                            <button type="button" class="width-preset-btn flex-1 py-1 px-2 rounded-md btn-secondary text-[10px] font-medium transition-all text-primary font-bold" data-width="100">Full (100%)</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- OFFLINE BIBLE STORAGE & CACHING -->
+                <div class="pt-5 border-t border-gray-200 dark:border-white/5" id="offline-cache-section">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-1.5">
+                            <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Offline Bible Storage</label>
+                            <svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 00-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
+                        </div>
+                        <span id="offline-status-badge" class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300">Checking...</span>
+                    </div>
+
+                    <div class="glass-input p-4 rounded-xl space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Select Translation to Cache:</label>
+                            <select id="offline-version-select" class="glass-input w-full p-2.5 rounded-lg text-sm outline-none cursor-pointer">
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+
+                        <!-- Status card -->
+                        <div id="offline-version-info-card" class="p-3.5 rounded-xl bg-gray-50/80 dark:bg-white/5 border border-gray-200/50 dark:border-white/5 flex items-start gap-3">
+                            <div id="offline-info-icon" class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h5 id="offline-version-title" class="text-xs font-bold text-gray-900 dark:text-white truncate">Douay-Rheims Bible</h5>
+                                <p id="offline-version-desc" class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">73 Books • Complete Catholic Canon</p>
+                                <div id="offline-cached-indicator" class="mt-2 flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hidden">
+                                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                                    <span id="offline-cached-text">Saved locally on device (73/73 Books ready offline)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Download Progress Bar (visible during caching) -->
+                        <div id="offline-progress-container" class="space-y-1.5 hidden">
+                            <div class="flex justify-between items-center text-xs">
+                                <span id="offline-progress-label" class="font-medium text-gray-700 dark:text-gray-300 truncate">Caching Genesis (1/73)...</span>
+                                <span id="offline-progress-percent" class="font-bold text-primary font-mono ml-2">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 dark:bg-white/10 rounded-full h-2 overflow-hidden">
+                                <div id="offline-progress-bar" class="bg-primary h-2 rounded-full transition-all duration-150" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="flex gap-2">
+                            <button id="download-offline-btn" class="flex-1 btn-primary flex items-center justify-center gap-2 font-medium py-2.5 px-3 rounded-lg text-xs shadow-sm">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                <span id="download-offline-btn-text">Download for Offline Use</span>
+                            </button>
+                            <button id="cancel-offline-btn" class="btn-secondary hidden py-2.5 px-3 rounded-lg text-xs font-semibold text-red-500 hover:text-red-600">
+                                Cancel
+                            </button>
+                            <button id="delete-offline-btn" class="btn-secondary hidden py-2.5 px-3 rounded-lg text-xs font-semibold text-red-500 hover:text-red-600 flex items-center justify-center gap-1.5" title="Remove offline cache">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                <span>Clear Cache</span>
+                            </button>
+                        </div>
+                        <p class="text-[10px] text-gray-500 dark:text-gray-400 leading-normal">
+                            Downloaded Bibles are stored in your browser's persistent local storage. Chapters will open instantly without needing a network connection.
+                        </p>
                     </div>
                 </div>
                 

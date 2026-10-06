@@ -37,7 +37,28 @@ const localDB = {
     },
     async get(key) { await this.init(); return new Promise((resolve, reject) => { const req = this.db.transaction('store', 'readonly').objectStore('store').get(key); req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error); }); },
     async set(key, val) { await this.init(); return new Promise((resolve, reject) => { const req = this.db.transaction('store', 'readwrite').objectStore('store').put(val, key); req.onsuccess = () => resolve(); req.onerror = () => reject(req.error); }); },
-    async remove(key) { await this.init(); return new Promise((resolve, reject) => { const req = this.db.transaction('store', 'readwrite').objectStore('store').delete(key); req.onsuccess = () => resolve(); req.onerror = () => reject(req.error); }); }
+    async remove(key) { await this.init(); return new Promise((resolve, reject) => { const req = this.db.transaction('store', 'readwrite').objectStore('store').delete(key); req.onsuccess = () => resolve(); req.onerror = () => reject(req.error); }); },
+    async getAllKeys() {
+        await this.init();
+        return new Promise((resolve, reject) => {
+            const req = this.db.transaction('store', 'readonly').objectStore('store').getAllKeys();
+            req.onsuccess = () => resolve(req.result || []);
+            req.onerror = () => reject(req.error);
+        });
+    },
+    async deletePrefix(prefix) {
+        await this.init();
+        const keys = await this.getAllKeys();
+        const matchingKeys = keys.filter(k => typeof k === 'string' && k.startsWith(prefix));
+        return new Promise((resolve, reject) => {
+            if (matchingKeys.length === 0) return resolve(0);
+            const tx = this.db.transaction('store', 'readwrite');
+            const store = tx.objectStore('store');
+            matchingKeys.forEach(k => store.delete(k));
+            tx.oncomplete = () => resolve(matchingKeys.length);
+            tx.onerror = () => reject(tx.error);
+        });
+    }
 };
 
 const THEME_PRESETS = {
@@ -546,6 +567,24 @@ function updateTranslationDropdowns() {
         if (select.querySelector(`option[value="${currentVal}"]`)) select.value = currentVal;
         else select.value = 'drb';
     });
+    
+    const offlineVersionSelect = document.getElementById('offline-version-select');
+    if (offlineVersionSelect) {
+        let optHtml = `
+            <option value="drb" data-name="Douay-Rheims Bible" data-base-url="https://exanx.github.io/bible-json/DRB-73-Books">Douay-Rheims Bible (73 Books)</option>
+            <option value="cpdv" data-name="Catholic Public Domain Version" data-base-url="https://exanx.github.io/bible-json/CPDV-73-Books">Catholic Public Domain Version (73 Books)</option>
+        `;
+        if (customBibles.length > 0) {
+            optHtml += `<optgroup label="Custom Bibles">`;
+            customBibles.forEach(cb => {
+                optHtml += `<option value="custom_${cb.id}" data-name="${cb.name}" data-base-url="${cb.url}">${cb.name} (Custom)</option>`;
+            });
+            optHtml += `</optgroup>`;
+        }
+        const curr = offlineVersionSelect.value;
+        offlineVersionSelect.innerHTML = optHtml;
+        if (offlineVersionSelect.querySelector(`option[value="${curr}"]`)) offlineVersionSelect.value = curr;
+    }
 }
 
 function renderCustomBiblesList() {
@@ -581,14 +620,37 @@ async function fetchChapterHTML(book, chapter) {
     const selectedOption = document.querySelector(`.translation-select option[value="${translation}"]`); 
     let data;
     
-    const baseUrl = selectedOption.dataset.baseUrl;
+    const baseUrl = selectedOption ? selectedOption.dataset.baseUrl : null;
     if (baseUrl) {
         const bookUrl = `${baseUrl}/${encodeURIComponent(book)}.json`;
+        const cacheKey = `cached_bible_${translation}_${book}`;
         try {
-            if (!staticBookData[bookUrl]) { 
-                const response = await fetch(bookUrl); 
-                if (!response.ok) throw new Error("Not Found"); 
-                staticBookData[bookUrl] = await response.json(); 
+            if (!staticBookData[bookUrl]) {
+                // 1. Check offline IndexedDB cache first
+                let cachedBook = null;
+                try {
+                    cachedBook = await localDB.get(cacheKey);
+                } catch (e) {
+                    console.warn("Local cache check failed:", e);
+                }
+
+                if (cachedBook) {
+                    staticBookData[bookUrl] = cachedBook;
+                } else {
+                    // 2. Fetch from network
+                    try {
+                        const response = await fetch(bookUrl); 
+                        if (!response.ok) throw new Error("Not Found"); 
+                        staticBookData[bookUrl] = await response.json(); 
+                        // Auto-cache to local storage for future offline reading
+                        localDB.set(cacheKey, staticBookData[bookUrl]).catch(console.warn);
+                    } catch (netErr) {
+                        if (!navigator.onLine) {
+                            throw new Error(`Offline Mode: "${book}" is not downloaded yet. Go to Settings > Offline Bible Storage to cache this translation to your device.`);
+                        }
+                        throw netErr;
+                    }
+                }
             }
             const bookData = staticBookData[bookUrl]; 
             
@@ -604,12 +666,32 @@ async function fetchChapterHTML(book, chapter) {
             
             data = { reference: `${book} ${chapter}`, translation_name: selectedOption.dataset.name, verses: chapterVerses };
         } catch (e) {
-            throw new Error(`This book or chapter is not available in ${selectedOption.dataset.name}.`);
+            throw new Error(e.message || `This book or chapter is not available in ${selectedOption.dataset.name}.`);
         }
     } else { 
-        const res = await fetch(`https://bible-api.com/${encodeURIComponent(book)}+${chapter}?translation=${translation}`); 
-        if (!res.ok) throw new Error("API Error"); 
-        data = await res.json(); 
+        const cacheKey = `cached_chapter_${translation}_${book}_${chapter}`;
+        let cachedChapter = null;
+        try {
+            cachedChapter = await localDB.get(cacheKey);
+        } catch (e) {
+            console.warn("Local chapter check failed:", e);
+        }
+
+        if (cachedChapter) {
+            data = cachedChapter;
+        } else {
+            try {
+                const res = await fetch(`https://bible-api.com/${encodeURIComponent(book)}+${chapter}?translation=${translation}`); 
+                if (!res.ok) throw new Error("API Error"); 
+                data = await res.json(); 
+                localDB.set(cacheKey, data).catch(console.warn);
+            } catch (netErr) {
+                if (!navigator.onLine) {
+                    throw new Error(`Offline Mode: "${book} ${chapter}" is not cached yet. Connect to the internet or cache a 73-book Catholic translation in Settings.`);
+                }
+                throw netErr;
+            }
+        }
     }
     
     currentTranslationName = data.translation_name; 
@@ -782,11 +864,315 @@ async function parseAndFetchVerse(inputString) {
     await loadChapter(foundBook, chapter, 'clear', verse);
 }
 
-function applyLineSpacing(ratio, skipSave = false) { currentLineRatio = ratio; document.documentElement.style.setProperty('--line-height-ratio', ratio); document.querySelectorAll('.line-spacing-btn').forEach(btn => { if (parseFloat(btn.dataset.ratio) === parseFloat(ratio)) { btn.classList.add('text-primary'); btn.classList.remove('text-gray-400'); } else { btn.classList.remove('text-primary'); btn.classList.add('text-gray-400'); } }); if(!skipSave) saveSettings(); }
-function changeFontSize(amount, skipSave = false) { currentFontSize = Math.max(0.875, Math.min(1.75, currentFontSize + amount)); document.documentElement.style.setProperty('--font-size-base', `${currentFontSize}rem`); if(!skipSave) saveSettings(); }
-function applyFontFamily(fontName, skipSave = false) { currentFontFamily = fontName; document.documentElement.style.setProperty('--font-family-base', `"${fontName}"`); document.querySelectorAll('.font-family-select').forEach(el => el.value = fontName); if(!skipSave) saveSettings(); }
-function applyFontWeight(isBold, skipSave = false) { currentIsBold = isBold; document.documentElement.style.setProperty('--font-weight-base', isBold ? '600' : '400'); document.querySelectorAll('.font-weight-toggle').forEach(btn => btn.classList.toggle('text-gray-800', isBold)); document.querySelectorAll('.font-weight-toggle').forEach(btn => btn.classList.toggle('dark:text-white', isBold)); if(!skipSave) saveSettings(); }
-function applyContentWidth(width, skipSave = false) { currentContentWidth = width; document.documentElement.style.setProperty('--content-width', width); document.querySelectorAll('.content-width-slider').forEach(slider => slider.value = width); if(!skipSave) saveSettings(); }
+function updateSettingsPreview() {
+    const previewBox = document.getElementById('settings-preview-box');
+    const previewHeading = document.getElementById('preview-heading');
+    const previewText = document.getElementById('preview-text');
+    const fontLabel = document.getElementById('preview-font-label');
+    const widthLabel = document.getElementById('preview-width-label');
+    const widthDisplay = document.querySelector('.content-width-display');
+    const fontSizeDisplay = document.querySelector('.font-size-display');
+    const themeIndicator = document.getElementById('preview-theme-indicator');
+    if (!previewBox) return;
+
+    // 1. Font Family & Weight & Size & Line Spacing
+    previewBox.style.fontFamily = `"${currentFontFamily}", sans-serif`;
+    previewBox.style.fontWeight = currentIsBold ? '600' : '400';
+    previewBox.style.lineHeight = `${currentLineRatio}`;
+    if (previewText) {
+        previewText.style.fontSize = `${currentFontSize * 0.95}rem`;
+    }
+    if (previewHeading) {
+        previewHeading.style.fontFamily = `"${currentFontFamily}", sans-serif`;
+    }
+    if (fontLabel) fontLabel.textContent = currentFontFamily;
+    if (fontSizeDisplay) {
+        const px = Math.round(currentFontSize * 16);
+        fontSizeDisplay.textContent = `${px}px`;
+    }
+
+    // 2. Reading Area Width
+    previewBox.style.width = `${currentContentWidth}%`;
+    if (widthLabel) widthLabel.textContent = `${currentContentWidth}% width`;
+    if (widthDisplay) widthDisplay.textContent = `${currentContentWidth}%`;
+
+    // Highlight active preset button
+    document.querySelectorAll('.width-preset-btn').forEach(btn => {
+        const w = parseInt(btn.dataset.width);
+        const isActive = w === currentContentWidth;
+        btn.classList.toggle('text-primary', isActive);
+        btn.classList.toggle('font-bold', isActive);
+        btn.classList.toggle('bg-primary/10', isActive);
+    });
+
+    // 3. Colors
+    const isDark = document.documentElement.classList.contains('dark');
+    const effectiveBg = currentCustomBg || (isDark ? '#000000' : '#f9fafb');
+    const effectiveText = currentCustomText || (isDark ? '#e5e5e5' : '#111827');
+    
+    previewBox.style.backgroundColor = effectiveBg;
+    previewBox.style.color = effectiveText;
+    if (previewHeading) {
+        previewHeading.style.color = effectiveText;
+    }
+
+    if (themeIndicator) {
+        if (currentCustomBg || currentCustomText) {
+            themeIndicator.textContent = 'Custom Colors';
+        } else {
+            const presetSelect = document.querySelector('.theme-preset-select');
+            const presetName = presetSelect && presetSelect.value !== 'custom' 
+                ? presetSelect.options[presetSelect.selectedIndex].text 
+                : (isDark ? 'Dark Mode' : 'Light Mode');
+            themeIndicator.textContent = presetName;
+        }
+    }
+
+    const sampleHl = document.getElementById('preview-sample-highlight');
+    if (sampleHl && currentAccentColor) {
+        sampleHl.style.boxShadow = `0 0 12px ${currentAccentColor.glow || 'rgba(79, 70, 229, 0.3)'}`;
+    }
+}
+
+let isOfflineDownloading = false;
+let cancelOfflineDownload = false;
+
+async function updateOfflineSectionUI() {
+    const versionSelect = document.getElementById('offline-version-select');
+    if (!versionSelect) return;
+
+    if (versionSelect.children.length === 0) {
+        let html = `
+            <option value="drb" data-name="Douay-Rheims Bible" data-base-url="https://exanx.github.io/bible-json/DRB-73-Books">Douay-Rheims Bible (73 Books)</option>
+            <option value="cpdv" data-name="Catholic Public Domain Version" data-base-url="https://exanx.github.io/bible-json/CPDV-73-Books">Catholic Public Domain Version (73 Books)</option>
+        `;
+        if (customBibles.length > 0) {
+            customBibles.forEach(cb => {
+                html += `<option value="custom_${cb.id}" data-name="${cb.name}" data-base-url="${cb.url}">${cb.name} (Custom)</option>`;
+            });
+        }
+        versionSelect.innerHTML = html;
+    }
+
+    const currentKey = versionSelect.value || 'drb';
+    const opt = versionSelect.querySelector(`option[value="${currentKey}"]`);
+    const versionName = opt ? opt.dataset.name : 'Douay-Rheims Bible';
+
+    const titleEl = document.getElementById('offline-version-title');
+    const descEl = document.getElementById('offline-version-desc');
+    const badgeEl = document.getElementById('offline-status-badge');
+    const indicatorEl = document.getElementById('offline-cached-indicator');
+    const indicatorText = document.getElementById('offline-cached-text');
+    const downloadBtnText = document.getElementById('download-offline-btn-text');
+    const deleteBtn = document.getElementById('delete-offline-btn');
+
+    if (titleEl) titleEl.textContent = versionName;
+    if (descEl) descEl.textContent = '73 Books • Complete Catholic Canon (OT + Deuterocanon + NT)';
+
+    let cachedCount = 0;
+    try {
+        const allKeys = await localDB.getAllKeys();
+        const prefix = `cached_bible_${currentKey}_`;
+        cachedCount = allKeys.filter(k => typeof k === 'string' && k.startsWith(prefix)).length;
+    } catch (e) {
+        console.warn("Could not query cached keys:", e);
+    }
+
+    const totalBooks = 73;
+    const isFullyCached = cachedCount >= totalBooks;
+
+    if (badgeEl) {
+        if (isFullyCached) {
+            badgeEl.textContent = `✓ Cached (${cachedCount}/${totalBooks})`;
+            badgeEl.className = 'text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300';
+        } else if (cachedCount > 0) {
+            badgeEl.textContent = `Partial (${cachedCount}/${totalBooks})`;
+            badgeEl.className = 'text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300';
+        } else {
+            badgeEl.textContent = 'Not Cached';
+            badgeEl.className = 'text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-400';
+        }
+    }
+
+    if (indicatorEl && indicatorText) {
+        if (cachedCount > 0) {
+            indicatorEl.classList.remove('hidden');
+            indicatorText.textContent = isFullyCached 
+                ? 'Saved locally on device (73/73 Books ready offline)'
+                : `${cachedCount} of ${totalBooks} books stored locally on device`;
+        } else {
+            indicatorEl.classList.add('hidden');
+        }
+    }
+
+    if (downloadBtnText) {
+        downloadBtnText.textContent = isFullyCached ? 'Re-download / Update' : 'Download for Offline Use';
+    }
+
+    if (deleteBtn) {
+        if (cachedCount > 0 && !isOfflineDownloading) {
+            deleteBtn.classList.remove('hidden');
+        } else {
+            deleteBtn.classList.add('hidden');
+        }
+    }
+}
+
+async function downloadTranslationOffline(translationKey) {
+    if (isOfflineDownloading) return;
+    const versionSelect = document.getElementById('offline-version-select');
+    const opt = versionSelect ? versionSelect.querySelector(`option[value="${translationKey}"]`) : null;
+    if (!opt) return showToast("Translation not found.");
+
+    const translationName = opt.dataset.name || opt.textContent;
+    const baseUrl = opt.dataset.baseUrl;
+    if (!baseUrl) {
+        return showToast("Direct download is available for 73-book Catholic editions.");
+    }
+
+    const books = [];
+    Object.keys(BIBLE_BOOKS).forEach(t => {
+        Object.keys(BIBLE_BOOKS[t]).forEach(b => books.push(b));
+    });
+
+    isOfflineDownloading = true;
+    cancelOfflineDownload = false;
+
+    const progressContainer = document.getElementById('offline-progress-container');
+    const progressBar = document.getElementById('offline-progress-bar');
+    const progressLabel = document.getElementById('offline-progress-label');
+    const progressPercent = document.getElementById('offline-progress-percent');
+    const downloadBtn = document.getElementById('download-offline-btn');
+    const cancelBtn = document.getElementById('cancel-offline-btn');
+    const deleteBtn = document.getElementById('delete-offline-btn');
+
+    if (progressContainer) progressContainer.classList.remove('hidden');
+    if (cancelBtn) cancelBtn.classList.remove('hidden');
+    if (downloadBtn) downloadBtn.classList.add('hidden');
+    if (deleteBtn) deleteBtn.classList.add('hidden');
+
+    let successCount = 0;
+    const total = books.length;
+
+    try {
+        for (let i = 0; i < total; i++) {
+            if (cancelOfflineDownload) {
+                showToast("Download cancelled.");
+                break;
+            }
+            const book = books[i];
+            const pct = Math.round(((i + 1) / total) * 100);
+            if (progressLabel) progressLabel.textContent = `Caching ${book} (${i + 1}/${total})...`;
+            if (progressPercent) progressPercent.textContent = `${pct}%`;
+            if (progressBar) progressBar.style.width = `${pct}%`;
+
+            const bookUrl = `${baseUrl}/${encodeURIComponent(book)}.json`;
+            const cacheKey = `cached_bible_${translationKey}_${book}`;
+
+            let existing = await localDB.get(cacheKey);
+            if (!existing) {
+                try {
+                    const res = await fetch(bookUrl);
+                    if (res.ok) {
+                        const json = await res.json();
+                        await localDB.set(cacheKey, json);
+                        staticBookData[bookUrl] = json;
+                    }
+                } catch (fetchErr) {
+                    console.warn(`Failed to fetch ${book}:`, fetchErr);
+                }
+            } else {
+                staticBookData[bookUrl] = existing;
+            }
+            successCount++;
+        }
+
+        if (!cancelOfflineDownload) {
+            const manifest = (await localDB.get('offline_manifest') || {});
+            manifest[translationKey] = {
+                id: translationKey,
+                name: translationName,
+                totalBooks: total,
+                cachedBooks: successCount,
+                cachedAt: Date.now()
+            };
+            await localDB.set('offline_manifest', manifest);
+            showToast(`✓ ${translationName} is now 100% available offline!`);
+        }
+    } catch (err) {
+        showToast(`Download error: ${err.message}`);
+    } finally {
+        isOfflineDownloading = false;
+        if (progressContainer) progressContainer.classList.add('hidden');
+        if (cancelBtn) cancelBtn.classList.add('hidden');
+        if (downloadBtn) downloadBtn.classList.remove('hidden');
+        await updateOfflineSectionUI();
+    }
+}
+
+async function deleteTranslationOffline(translationKey) {
+    const prefix = `cached_bible_${translationKey}_`;
+    const deletedCount = await localDB.deletePrefix(prefix);
+
+    for (const url in staticBookData) {
+        if (url.includes(translationKey)) delete staticBookData[url];
+    }
+
+    const manifest = (await localDB.get('offline_manifest') || {});
+    delete manifest[translationKey];
+    await localDB.set('offline_manifest', manifest);
+
+    showToast(`Offline cache cleared (${deletedCount} books removed).`);
+    await updateOfflineSectionUI();
+}
+
+function applyLineSpacing(ratio, skipSave = false) { 
+    currentLineRatio = ratio; 
+    document.documentElement.style.setProperty('--line-height-ratio', ratio); 
+    document.querySelectorAll('.line-spacing-btn').forEach(btn => { 
+        if (parseFloat(btn.dataset.ratio) === parseFloat(ratio)) { 
+            btn.classList.add('text-primary'); 
+            btn.classList.remove('text-gray-400'); 
+        } else { 
+            btn.classList.remove('text-primary'); 
+            btn.classList.add('text-gray-400'); 
+        } 
+    }); 
+    updateSettingsPreview();
+    if(!skipSave) saveSettings(); 
+}
+
+function changeFontSize(amount, skipSave = false) { 
+    currentFontSize = Math.max(0.875, Math.min(1.75, currentFontSize + amount)); 
+    document.documentElement.style.setProperty('--font-size-base', `${currentFontSize}rem`); 
+    updateSettingsPreview();
+    if(!skipSave) saveSettings(); 
+}
+
+function applyFontFamily(fontName, skipSave = false) { 
+    currentFontFamily = fontName; 
+    document.documentElement.style.setProperty('--font-family-base', `"${fontName}"`); 
+    document.querySelectorAll('.font-family-select').forEach(el => el.value = fontName); 
+    updateSettingsPreview();
+    if(!skipSave) saveSettings(); 
+}
+
+function applyFontWeight(isBold, skipSave = false) { 
+    currentIsBold = isBold; 
+    document.documentElement.style.setProperty('--font-weight-base', isBold ? '600' : '400'); 
+    document.querySelectorAll('.font-weight-toggle').forEach(btn => btn.classList.toggle('text-gray-800', isBold)); 
+    document.querySelectorAll('.font-weight-toggle').forEach(btn => btn.classList.toggle('dark:text-white', isBold)); 
+    updateSettingsPreview();
+    if(!skipSave) saveSettings(); 
+}
+
+function applyContentWidth(width, skipSave = false) { 
+    currentContentWidth = parseInt(width); 
+    document.documentElement.style.setProperty('--content-width', currentContentWidth); 
+    document.querySelectorAll('.content-width-slider').forEach(slider => slider.value = currentContentWidth); 
+    updateSettingsPreview();
+    if(!skipSave) saveSettings(); 
+}
 
 function applyCustomColors(bg, text, skipSave = false) {
     currentCustomBg = bg; currentCustomText = text;
@@ -794,6 +1180,7 @@ function applyCustomColors(bg, text, skipSave = false) {
     if (text) document.body.style.setProperty('--custom-text', text); else document.body.style.removeProperty('--custom-text');
     document.querySelectorAll('.custom-bg-picker').forEach(el => el.value = bg || (document.documentElement.classList.contains('dark') ? '#000000' : '#f9fafb'));
     document.querySelectorAll('.custom-text-picker').forEach(el => el.value = text || (document.documentElement.classList.contains('dark') ? '#e5e5e5' : '#111827'));
+    updateSettingsPreview();
     if(!skipSave) saveSettings();
 }
 
@@ -804,6 +1191,7 @@ function applyTheme(theme, skipSave = false) {
     document.querySelectorAll('.theme-text').forEach(el => el.textContent = theme === 'dark' ? 'Light Mode' : 'Dark Mode'); 
     if (!currentCustomBg) document.querySelectorAll('.custom-bg-picker').forEach(el => el.value = theme === 'dark' ? '#000000' : '#f9fafb');
     if (!currentCustomText) document.querySelectorAll('.custom-text-picker').forEach(el => el.value = theme === 'dark' ? '#e5e5e5' : '#111827');
+    updateSettingsPreview();
     if(!skipSave) saveSettings(); 
 }
 
@@ -814,7 +1202,26 @@ function applyTranslation(value, skipSave = false) {
         saveSettings(); 
     } 
 }
-function applyAccentColor(accentObj, skipSave = false) { currentAccentColor = accentObj; document.documentElement.style.setProperty('--color-primary', accentObj.color); document.documentElement.style.setProperty('--color-primary-hover', accentObj.hover); document.documentElement.style.setProperty('--color-primary-glow', accentObj.glow); let foundStandard = false; document.querySelectorAll('.accent-picker').forEach(btn => { const isActive = btn.dataset.color === accentObj.color; btn.classList.toggle('active', isActive); if (isActive) foundStandard = true; }); document.querySelectorAll('.custom-accent-container').forEach(container => { container.classList.toggle('active', !foundStandard); const input = container.querySelector('.custom-accent-picker'); if (input && accentObj.color.length === 7) input.value = accentObj.color; }); if(!skipSave) saveSettings(); }
+
+function applyAccentColor(accentObj, skipSave = false) { 
+    currentAccentColor = accentObj; 
+    document.documentElement.style.setProperty('--color-primary', accentObj.color); 
+    document.documentElement.style.setProperty('--color-primary-hover', accentObj.hover); 
+    document.documentElement.style.setProperty('--color-primary-glow', accentObj.glow); 
+    let foundStandard = false; 
+    document.querySelectorAll('.accent-picker').forEach(btn => { 
+        const isActive = btn.dataset.color === accentObj.color; 
+        btn.classList.toggle('active', isActive); 
+        if (isActive) foundStandard = true; 
+    }); 
+    document.querySelectorAll('.custom-accent-container').forEach(container => { 
+        container.classList.toggle('active', !foundStandard); 
+        const input = container.querySelector('.custom-accent-picker'); 
+        if (input && accentObj.color.length === 7) input.value = accentObj.color; 
+    }); 
+    updateSettingsPreview();
+    if(!skipSave) saveSettings(); 
+}
 
 function populateBooks(selectElement) { selectElement.innerHTML = ''; Object.keys(BIBLE_BOOKS).forEach(testament => { const optgroup = document.createElement('optgroup'); optgroup.label = testament; Object.keys(BIBLE_BOOKS[testament]).forEach(bookName => { const option = document.createElement('option'); option.value = bookName; option.textContent = bookName; optgroup.appendChild(option); }); selectElement.appendChild(optgroup); }); }
 function populateChapters(bookSelect, chapterSelect) { const book = bookSelect.value; let chapterCount = BIBLE_BOOKS["Old Testament"][book] || BIBLE_BOOKS["New Testament"][book] || 1; chapterSelect.innerHTML = ''; for (let i = 1; i <= chapterCount; i++) { const option = document.createElement('option'); option.value = i; option.textContent = `Chapter ${i}`; chapterSelect.appendChild(option); } }
@@ -1207,8 +1614,77 @@ window.onload = async () => {
     document.querySelectorAll('.open-settings-modal-btn').forEach(btn => btn.addEventListener('click', () => {
         settingsModal.classList.remove('hidden');
         if (window.innerWidth < 1024) toggleMobileSidebar(false);
+        updateSettingsPreview();
+        updateOfflineSectionUI();
     }));
     closeSettingsModalBtn.addEventListener('click', () => settingsModal.classList.add('hidden'));
+
+    // Width Preset Buttons
+    document.querySelectorAll('.width-preset-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const width = parseInt(e.currentTarget.dataset.width);
+            applyContentWidth(width, false);
+            updateSettingsPreview();
+        });
+    });
+
+    // Offline Bible Section Events
+    const offlineVersionSelect = document.getElementById('offline-version-select');
+    if (offlineVersionSelect) {
+        offlineVersionSelect.addEventListener('change', updateOfflineSectionUI);
+    }
+
+    const downloadOfflineBtn = document.getElementById('download-offline-btn');
+    if (downloadOfflineBtn) {
+        downloadOfflineBtn.addEventListener('click', () => {
+            const version = document.getElementById('offline-version-select').value;
+            downloadTranslationOffline(version);
+        });
+    }
+
+    const cancelOfflineBtn = document.getElementById('cancel-offline-btn');
+    if (cancelOfflineBtn) {
+        cancelOfflineBtn.addEventListener('click', () => {
+            cancelOfflineDownload = true;
+        });
+    }
+
+    const deleteOfflineBtn = document.getElementById('delete-offline-btn');
+    if (deleteOfflineBtn) {
+        deleteOfflineBtn.addEventListener('click', () => {
+            const version = document.getElementById('offline-version-select').value;
+            deleteTranslationOffline(version);
+        });
+    }
+
+    // Network connectivity detection
+    window.addEventListener('online', () => {
+        const banner = document.getElementById('offline-network-banner');
+        const text = document.getElementById('offline-network-text');
+        if (banner && text) {
+            text.textContent = 'Back Online — All features connected';
+            banner.className = 'fixed top-14 left-1/2 -translate-x-1/2 z-50 bg-emerald-600 dark:bg-emerald-500 text-white text-xs font-semibold py-1.5 px-4 rounded-full shadow-xl flex items-center gap-2 transition-all duration-300 opacity-100 translate-y-0';
+            setTimeout(() => {
+                banner.className = 'fixed top-14 left-1/2 -translate-x-1/2 z-50 bg-emerald-600 dark:bg-emerald-500 text-white text-xs font-semibold py-1.5 px-4 rounded-full shadow-xl flex items-center gap-2 transition-all duration-300 opacity-0 pointer-events-none -translate-y-4';
+            }, 3000);
+        }
+    });
+
+    window.addEventListener('offline', () => {
+        const banner = document.getElementById('offline-network-banner');
+        const text = document.getElementById('offline-network-text');
+        if (banner && text) {
+            text.textContent = 'Offline Mode — Reading from device cache';
+            banner.className = 'fixed top-14 left-1/2 -translate-x-1/2 z-50 bg-amber-600 dark:bg-amber-500 text-white text-xs font-semibold py-1.5 px-4 rounded-full shadow-xl flex items-center gap-2 transition-all duration-300 opacity-100 translate-y-0';
+        }
+    });
+
+    if (!navigator.onLine) {
+        const banner = document.getElementById('offline-network-banner');
+        if (banner) {
+            banner.className = 'fixed top-14 left-1/2 -translate-x-1/2 z-50 bg-amber-600 dark:bg-amber-500 text-white text-xs font-semibold py-1.5 px-4 rounded-full shadow-xl flex items-center gap-2 transition-all duration-300 opacity-100 translate-y-0';
+        }
+    }
 
     document.querySelectorAll('.custom-bible-help-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -1432,6 +1908,8 @@ window.onload = async () => {
     await localDB.init(); 
     await loadDataFromLocalDB(); 
     updateSelectionText(lastRead.book, lastRead.chapter);
+    updateSettingsPreview();
+    updateOfflineSectionUI();
     
     if (initialMessage.style.display !== 'none') {
         loadChapter(lastRead.book, lastRead.chapter, 'clear', lastRead.verse);
