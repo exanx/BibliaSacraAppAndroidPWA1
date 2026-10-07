@@ -129,7 +129,8 @@ const FULL_THEMES = {
         text: '#453310',
         font: 'Crimson Pro',
         accent: { color: '#eab308', hover: '#ca8a04', glow: 'rgba(234, 179, 8, 0.45)' },
-        desc: 'Divine warm golden aureole'
+        desc: 'Divine warm golden aureole',
+        animated: true
     },
     soft_light: {
         id: 'soft_light',
@@ -151,7 +152,8 @@ const FULL_THEMES = {
         text: '#123924',
         font: 'Lora',
         accent: { color: '#059669', hover: '#047857', glow: 'rgba(5, 150, 105, 0.4)' },
-        desc: 'Serene botanical clover & fresh laurel green'
+        desc: 'Serene botanical clover & fresh laurel green',
+        animated: true
     },
 
     // === DARK (Exactly 6 themes) ===
@@ -164,7 +166,8 @@ const FULL_THEMES = {
         text: '#ffe4e6',
         font: 'Playfair Display',
         accent: { color: '#f43f5e', hover: '#e11d48', glow: 'rgba(244, 63, 94, 0.45)' },
-        desc: 'Velvet crimson noir & ruby silk'
+        desc: 'Velvet crimson noir & ruby silk',
+        animated: true
     },
     neon_blue: {
         id: 'neon_blue',
@@ -175,7 +178,8 @@ const FULL_THEMES = {
         text: '#e0f2fe',
         font: 'Oswald',
         accent: { color: '#00d2ff', hover: '#0284c7', glow: 'rgba(0, 210, 255, 0.5)' },
-        desc: 'Electric cobalt living waters'
+        desc: 'Electric cobalt living waters',
+        animated: true
     },
     night_sky: {
         id: 'night_sky',
@@ -186,7 +190,8 @@ const FULL_THEMES = {
         text: '#e2e8f0',
         font: 'Lora',
         accent: { color: '#3b82f6', hover: '#2563eb', glow: 'rgba(59, 130, 246, 0.4)' },
-        desc: 'Starry firmament & celestial sapphire'
+        desc: 'Starry firmament & celestial sapphire',
+        animated: true
     },
     golden_age: {
         id: 'golden_age',
@@ -197,7 +202,8 @@ const FULL_THEMES = {
         text: '#fef08a',
         font: 'Crimson Pro',
         accent: { color: '#f59e0b', hover: '#d97706', glow: 'rgba(245, 158, 11, 0.45)' },
-        desc: 'Obsidian sanctuary & imperial gold'
+        desc: 'Obsidian sanctuary & imperial gold',
+        animated: true
     },
     grey_hound: {
         id: 'grey_hound',
@@ -219,13 +225,119 @@ const FULL_THEMES = {
         text: '#f3e8ff',
         font: 'Merriweather',
         accent: { color: '#a855f7', hover: '#9333ea', glow: 'rgba(168, 85, 247, 0.45)' },
-        desc: 'Imperial liturgical violet & regal lilac'
+        desc: 'Imperial liturgical violet & regal lilac',
+        animated: true
     }
 };
 
 const THEME_PRESETS = FULL_THEMES;
 let currentActiveThemeId = 'amoled_black';
 let currentThemeCategory = 'main';
+let currentGlowingBorder = 'disabled';
+let currentLiveEffect = 'theme_default';
+
+const GLOWING_BORDER_NAMES = {
+    disabled: 'Disabled (Off)',
+    divine_gold: 'Divine Gold',
+    living_waters: 'Living Waters',
+    holy_fire: 'Holy Fire',
+    royal_amethyst: 'Royal Amethyst',
+    covenant_prism: 'Covenant Prism',
+    emerald_life: 'Living Emerald',
+    pure_light: 'Pure Moonlight'
+};
+
+const LIVE_EFFECT_NAMES = {
+    theme_default: 'Theme Default',
+    none: 'Static (None)',
+    night_sky: 'Night Sky',
+    neon_blue: 'Living Waters',
+    yellow_halo: 'Divine Aureole',
+    golden_age: 'Candlelight',
+    red_rose: 'Velvet Crimson',
+    eden_sage: 'Eden Laurel',
+    royal_aurora: 'Royal Aurora',
+    morning_dew: 'Dawn Radiance'
+};
+
+function applyGlowingBorder(borderId = 'disabled', skipSave = false) {
+    currentGlowingBorder = borderId;
+    const container = document.getElementById('reading-container');
+    if (!container) return;
+
+    container.classList.remove(
+        'border-glow-active',
+        'border-glow-divine_gold',
+        'border-glow-living_waters',
+        'border-glow-holy_fire',
+        'border-glow-royal_amethyst',
+        'border-glow-covenant_prism',
+        'border-glow-emerald_life',
+        'border-glow-pure_light'
+    );
+
+    if (borderId && borderId !== 'disabled') {
+        container.classList.add('border-glow-active', `border-glow-${borderId}`);
+    }
+
+    const badge = document.getElementById('active-glowing-border-badge');
+    if (badge) {
+        badge.textContent = GLOWING_BORDER_NAMES[borderId] || 'Disabled';
+        badge.classList.toggle('text-primary', borderId !== 'disabled');
+        badge.classList.toggle('text-gray-400', borderId === 'disabled');
+    }
+
+    document.querySelectorAll('.glowing-border-option-btn').forEach(btn => {
+        const isCur = btn.dataset.border === borderId;
+        btn.classList.toggle('active', isCur);
+        btn.classList.toggle('ring-2', isCur);
+        btn.classList.toggle('ring-primary', isCur);
+        btn.classList.toggle('border-primary', isCur);
+    });
+
+    if (!skipSave) {
+        saveSettings();
+        if (borderId !== 'disabled') {
+            showToast(`Glowing border "${GLOWING_BORDER_NAMES[borderId]}" active`);
+        } else {
+            showToast('Glowing border disabled');
+        }
+    }
+}
+
+function applyLiveEffect(effectId = 'theme_default', skipSave = false) {
+    currentLiveEffect = effectId;
+    
+    let resolvedEffect = effectId;
+    if (effectId === 'theme_default') {
+        const theme = FULL_THEMES[currentActiveThemeId];
+        if (theme && theme.animated) {
+            resolvedEffect = theme.id;
+        } else {
+            resolvedEffect = 'none';
+        }
+    }
+
+    document.body.dataset.liveEffect = resolvedEffect;
+
+    const badge = document.getElementById('active-live-effect-badge');
+    if (badge) {
+        badge.textContent = LIVE_EFFECT_NAMES[effectId] || 'Theme Default';
+    }
+
+    document.querySelectorAll('.live-effect-option-btn').forEach(btn => {
+        const isCur = btn.dataset.effect === effectId;
+        btn.classList.toggle('active', isCur);
+        btn.classList.toggle('ring-2', isCur);
+        btn.classList.toggle('ring-primary', isCur);
+        btn.classList.toggle('border-primary', isCur);
+    });
+
+    if (!skipSave) {
+        saveSettings();
+        showToast(`Live effect "${LIVE_EFFECT_NAMES[effectId]}" active`);
+    }
+}
 
 const scriptureDisplay = document.getElementById('scripture-display'), initialMessage = document.getElementById('initial-message'), versionSubtitle = document.getElementById('version-subtitle');
 const selectionTooltip = document.getElementById('selection-tooltip');
@@ -376,6 +488,8 @@ function buildSettingsObject() {
         accentColor: currentAccentColor,
         theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
         activeThemeId: currentActiveThemeId,
+        glowingBorder: currentGlowingBorder || 'disabled',
+        liveEffect: currentLiveEffect || 'theme_default',
         customBibles,
         customFonts,
         customBg: currentCustomBg,
@@ -411,8 +525,16 @@ function applyLoadedSettings(s, skipSave = false) {
     if (s.activeThemeId && FULL_THEMES[s.activeThemeId]) {
         currentActiveThemeId = s.activeThemeId;
     }
+    document.body.dataset.activeTheme = currentActiveThemeId;
     updateFullThemesUI();
     
+    // Apply glowing border & live atmospheric effect
+    if (s.glowingBorder) applyGlowingBorder(s.glowingBorder, true);
+    else applyGlowingBorder('disabled', true);
+
+    if (s.liveEffect) applyLiveEffect(s.liveEffect, true);
+    else applyLiveEffect('theme_default', true);
+
     if (!skipSave) {
         settingsUpdatedAt = s.updatedAt || Date.now();
         saveToLocalDB();
@@ -1192,6 +1314,7 @@ function applyFullTheme(themeId, skipSave = false) {
     if (!theme) return;
 
     currentActiveThemeId = themeId;
+    document.body.dataset.activeTheme = themeId;
 
     // 1. Switch global UI mode (dark / light)
     applyTheme(theme.mode, true);
@@ -1208,7 +1331,12 @@ function applyFullTheme(themeId, skipSave = false) {
     // 5. Update UI Badges & Grid Active States
     updateFullThemesUI();
 
-    // 6. Update Live Reading Preview
+    // 6. Update Live Atmospheric Effect (if set to Theme Default)
+    if (currentLiveEffect === 'theme_default') {
+        applyLiveEffect('theme_default', true);
+    }
+
+    // 7. Update Live Reading Preview
     updateSettingsPreview();
 
     if (!skipSave) {
@@ -1276,7 +1404,10 @@ function renderFullThemes(category = currentThemeCategory) {
 
                 <div class="flex items-center justify-between text-[10px] font-medium opacity-80 pt-1 border-t border-current/15 w-full mt-auto">
                     <span class="truncate" style="font-family: '${t.font}', sans-serif;">${t.font}</span>
-                    <span class="text-[8px] font-bold uppercase tracking-wider px-1 py-0.5 rounded bg-black/10 dark:bg-white/10 shrink-0 ml-1">${t.mode}</span>
+                    <div class="flex items-center gap-1 shrink-0 ml-1">
+                        ${t.animated ? `<span class="inline-flex items-center gap-1 text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30"><span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>Live</span>` : ''}
+                        <span class="text-[8px] font-bold uppercase tracking-wider px-1 py-0.5 rounded bg-black/10 dark:bg-white/10">${t.mode}</span>
+                    </div>
                 </div>
             </button>
         `;
@@ -1689,15 +1820,16 @@ async function updateQuoteLivePreview() {
     previewBox.style.fontFamily = `"${fontName}", serif`;
     
     // Adjust container size per ratio
+    const isDesktop = window.innerWidth >= 1024;
     if (currentQuoteAspectRatio === '1:1') {
-        previewBox.style.width = '280px';
-        previewBox.style.height = '280px';
+        previewBox.style.width = isDesktop ? '320px' : '260px';
+        previewBox.style.height = isDesktop ? '320px' : '260px';
     } else if (currentQuoteAspectRatio === '9:16') {
-        previewBox.style.width = '200px';
-        previewBox.style.height = '355px';
+        previewBox.style.width = isDesktop ? '210px' : '180px';
+        previewBox.style.height = isDesktop ? '373px' : '320px';
     } else if (currentQuoteAspectRatio === '16:9') {
-        previewBox.style.width = '350px';
-        previewBox.style.height = '197px';
+        previewBox.style.width = isDesktop ? '360px' : '280px';
+        previewBox.style.height = isDesktop ? '202px' : '158px';
     }
     
     if (selectedPexelsImageUrl) {
@@ -2569,6 +2701,7 @@ function renderHighlights() {
 }
 
 window.onload = async () => {
+    document.body.dataset.activeTheme = currentActiveThemeId;
     updateFontDropdowns();
     updateQuoteFontDropdown();
 
@@ -2608,6 +2741,22 @@ window.onload = async () => {
             currentActiveThemeId = document.documentElement.classList.contains('dark') ? 'amoled_black' : 'pure_white'; 
             updateFullThemesUI(); 
         }); 
+    });
+
+    // Live Atmospheric Background Effects selector
+    document.querySelectorAll('.live-effect-option-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const effect = e.currentTarget.dataset.effect;
+            applyLiveEffect(effect);
+        });
+    });
+
+    // Glowing Reading Area Border selector
+    document.querySelectorAll('.glowing-border-option-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const border = e.currentTarget.dataset.border;
+            applyGlowingBorder(border);
+        });
     });
     
     document.querySelectorAll('.accent-picker').forEach(btn => btn.addEventListener('click', (e) => applyAccentColor({ color: e.target.dataset.color, hover: e.target.dataset.hover, glow: e.target.dataset.glow }))); document.querySelectorAll('.custom-accent-picker').forEach(picker => { const updater = (e) => applyAccentColor(generateAccentVariants(e.target.value)); picker.addEventListener('input', updater); picker.addEventListener('change', updater); });
@@ -2788,6 +2937,31 @@ window.onload = async () => {
     if (importNotesBtn && importNotesInput) {
         importNotesBtn.addEventListener('click', () => importNotesInput.click());
         importNotesInput.addEventListener('change', handleNotesFileImport);
+    }
+
+    // Expandable Unified Markdown Notes Menu
+    const mdMenuBtn = document.getElementById('notes-markdown-menu-btn');
+    const mdDropdown = document.getElementById('notes-markdown-dropdown');
+    const mdChevron = document.getElementById('notes-markdown-menu-chevron');
+    if (mdMenuBtn && mdDropdown) {
+        mdMenuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isHidden = mdDropdown.classList.contains('hidden');
+            mdDropdown.classList.toggle('hidden', !isHidden);
+            if (mdChevron) mdChevron.style.transform = isHidden ? 'rotate(180deg)' : '';
+        });
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#notes-markdown-menu-wrapper')) {
+                mdDropdown.classList.add('hidden');
+                if (mdChevron) mdChevron.style.transform = '';
+            }
+        });
+        mdDropdown.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                mdDropdown.classList.add('hidden');
+                if (mdChevron) mdChevron.style.transform = '';
+            });
+        });
     }
 
     // Bookmarks Modal Wiring

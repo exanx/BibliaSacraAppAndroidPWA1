@@ -233,6 +233,350 @@
         .dark .color-swatch.selected { box-shadow: 0 0 0 2px #18181b, 0 0 0 4px var(--color-primary); }
 
         #toast-notification.show { transform: translateY(0); opacity: 1; }
+
+        /* === LIVE ANIMATED ATMOSPHERIC EFFECTS === */
+        body[data-live-effect="none"]::before,
+        body[data-live-effect="none"]::after {
+            display: none !important;
+        }
+
+        /* 1. Night Sky — Twinkling Celestial Stars & Stardust Drift */
+        body[data-active-theme="night_sky"]::before,
+        body[data-live-effect="night_sky"]::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background-image: 
+                radial-gradient(1.2px 1.2px at 25px 35px, rgba(255,255,255,0.9), transparent),
+                radial-gradient(2px 2px at 120px 160px, rgba(255,255,255,1), transparent),
+                radial-gradient(1.2px 1.2px at 280px 90px, rgba(147,197,253,0.9), transparent),
+                radial-gradient(2.2px 2.2px at 450px 320px, rgba(255,255,255,0.95), transparent),
+                radial-gradient(1.2px 1.2px at 640px 190px, rgba(191,219,254,0.85), transparent),
+                radial-gradient(2.5px 2.5px at 820px 480px, rgba(255,255,255,1), transparent),
+                radial-gradient(1.2px 1.2px at 980px 130px, rgba(255,255,255,0.8), transparent),
+                radial-gradient(2px 2px at 1240px 370px, rgba(147,197,253,0.95), transparent);
+            background-repeat: repeat;
+            background-size: 550px 550px;
+            animation: nightSkyTwinkle 6s ease-in-out infinite alternate;
+            opacity: 0.85;
+        }
+        body[data-active-theme="night_sky"]::after,
+        body[data-live-effect="night_sky"]::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background: radial-gradient(circle 850px at 75% 25%, rgba(30, 58, 138, 0.22), transparent 70%),
+                        radial-gradient(circle 650px at 20% 80%, rgba(59, 130, 246, 0.15), transparent 70%);
+            animation: nightSkyDrift 16s ease-in-out infinite alternate;
+        }
+        @keyframes nightSkyTwinkle {
+            0% { opacity: 0.4; transform: scale(1); }
+            50% { opacity: 0.95; }
+            100% { opacity: 0.5; transform: scale(1.01); }
+        }
+        @keyframes nightSkyDrift {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-20px, 15px); }
+        }
+
+        /* 2. Neon Blue / Living Waters — Electric Ambient Waters */
+        body[data-active-theme="neon_blue"]::before,
+        body[data-live-effect="neon_blue"]::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background: radial-gradient(circle 800px at 50% 10%, rgba(0, 210, 255, 0.18), transparent 70%),
+                        radial-gradient(circle 600px at 85% 85%, rgba(2, 132, 199, 0.14), transparent 70%),
+                        radial-gradient(circle 450px at 15% 50%, rgba(6, 182, 212, 0.10), transparent 70%);
+            animation: neonAuraPulse 4.5s ease-in-out infinite alternate;
+        }
+        @keyframes neonAuraPulse {
+            0% { opacity: 0.45; filter: hue-rotate(0deg); }
+            100% { opacity: 1; filter: hue-rotate(14deg); }
+        }
+
+        /* 3. Yellow Halo / Divine Aureole — Sacred Golden Radiance */
+        body[data-active-theme="yellow_halo"]::before,
+        body[data-live-effect="yellow_halo"]::before {
+            content: '';
+            position: fixed;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 900px;
+            height: 700px;
+            pointer-events: none;
+            z-index: 0;
+            background: radial-gradient(circle, rgba(250, 204, 21, 0.35) 0%, rgba(253, 224, 71, 0.16) 45%, transparent 70%);
+            border-radius: 50%;
+            animation: haloAuraBreathe 6s ease-in-out infinite alternate;
+        }
+        @keyframes haloAuraBreathe {
+            0% { transform: translateX(-50%) scale(0.93); opacity: 0.55; }
+            100% { transform: translateX(-50%) scale(1.1); opacity: 0.95; }
+        }
+
+        /* 4. Golden Age / Sanctuary Candlelight — Cathedral Warmth */
+        body[data-active-theme="golden_age"]::before,
+        body[data-live-effect="golden_age"]::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background: radial-gradient(circle 750px at 50% 25%, rgba(245, 158, 11, 0.20), transparent 70%),
+                        radial-gradient(circle 550px at 15% 80%, rgba(217, 119, 6, 0.14), transparent 70%),
+                        radial-gradient(circle 400px at 85% 40%, rgba(251, 191, 36, 0.10), transparent 70%);
+            animation: candleAuraGlow 6s ease-in-out infinite alternate;
+        }
+        @keyframes candleAuraGlow {
+            0% { opacity: 0.45; transform: scale(0.99); }
+            50% { opacity: 0.95; transform: scale(1.015); }
+            100% { opacity: 0.55; transform: scale(0.995); }
+        }
+
+        /* 5. Red Rose — Living Velvet Crimson Pulse */
+        body[data-active-theme="red_rose"]::before,
+        body[data-live-effect="red_rose"]::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background: radial-gradient(circle 750px at 50% 18%, rgba(244, 63, 94, 0.20), transparent 70%),
+                        radial-gradient(circle 600px at 80% 80%, rgba(225, 29, 72, 0.15), transparent 70%);
+            animation: roseAuraGlow 5.5s ease-in-out infinite alternate;
+        }
+        @keyframes roseAuraGlow {
+            0% { opacity: 0.45; }
+            100% { opacity: 0.95; }
+        }
+
+        /* 6. Eden Sage — Botanical Meadow Shimmer */
+        body[data-active-theme="eden_sage"]::before,
+        body[data-live-effect="eden_sage"]::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background: radial-gradient(circle 800px at 50% 15%, rgba(16, 185, 129, 0.18), transparent 70%),
+                        radial-gradient(circle 550px at 20% 85%, rgba(5, 150, 105, 0.12), transparent 70%),
+                        radial-gradient(circle 450px at 80% 50%, rgba(52, 211, 153, 0.10), transparent 70%);
+            animation: edenAuraBreathe 7s ease-in-out infinite alternate;
+        }
+        @keyframes edenAuraBreathe {
+            0% { opacity: 0.4; transform: scale(0.98); }
+            100% { opacity: 0.95; transform: scale(1.02); }
+        }
+
+        /* 7. Royal Aurora — Liturgical Amethyst & Violet Celestial Wave */
+        body[data-active-theme="royal_amethyst"]::before,
+        body[data-live-effect="royal_aurora"]::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background: radial-gradient(circle 800px at 50% 12%, rgba(168, 85, 247, 0.22), transparent 70%),
+                        radial-gradient(circle 600px at 85% 85%, rgba(147, 51, 234, 0.16), transparent 70%),
+                        radial-gradient(circle 450px at 15% 45%, rgba(192, 132, 252, 0.12), transparent 70%);
+            animation: royalAuroraWave 6.5s ease-in-out infinite alternate;
+        }
+        @keyframes royalAuroraWave {
+            0% { opacity: 0.4; filter: hue-rotate(0deg); }
+            100% { opacity: 0.95; filter: hue-rotate(18deg); }
+        }
+
+        /* 8. Morning Dew — Serene Daylight Radiance */
+        body[data-live-effect="morning_dew"]::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background: radial-gradient(circle 850px at 50% 10%, rgba(254, 240, 138, 0.26), transparent 70%),
+                        radial-gradient(circle 600px at 20% 80%, rgba(253, 186, 116, 0.16), transparent 70%);
+            animation: morningDewBreathe 8s ease-in-out infinite alternate;
+        }
+        @keyframes morningDewBreathe {
+            0% { opacity: 0.45; transform: scale(0.98); }
+            100% { opacity: 0.92; transform: scale(1.02); }
+        }
+
+        /* === READING AREA GLOWING BORDER (ALL FOUR SIDES) === */
+        #reading-container.border-glow-active {
+            border-radius: 1.5rem;
+            margin-top: 1.25rem;
+            margin-bottom: 2.5rem;
+            padding-top: 2rem;
+            padding-bottom: 2.5rem;
+            transition: all 0.4s ease;
+            background-color: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .dark #reading-container.border-glow-active {
+            background-color: rgba(0, 0, 0, 0.15);
+        }
+
+        /* 1. Divine Gold */
+        #reading-container.border-glow-divine_gold {
+            border: 2px solid rgba(245, 158, 11, 0.75);
+            animation: borderGlowGold 4.5s ease-in-out infinite alternate;
+        }
+        @keyframes borderGlowGold {
+            0% {
+                border-color: rgba(245, 158, 11, 0.55);
+                box-shadow: 0 0 16px rgba(245, 158, 11, 0.22), 0 0 35px rgba(217, 119, 6, 0.12), inset 0 0 12px rgba(245, 158, 11, 0.08);
+            }
+            50% {
+                border-color: rgba(251, 191, 36, 0.95);
+                box-shadow: 0 0 30px rgba(251, 191, 36, 0.45), 0 0 60px rgba(245, 158, 11, 0.25), inset 0 0 25px rgba(245, 158, 11, 0.18);
+            }
+            100% {
+                border-color: rgba(245, 158, 11, 0.65);
+                box-shadow: 0 0 20px rgba(245, 158, 11, 0.28), 0 0 42px rgba(217, 119, 6, 0.15), inset 0 0 15px rgba(245, 158, 11, 0.1);
+            }
+        }
+
+        /* 2. Living Waters / Cyan */
+        #reading-container.border-glow-living_waters {
+            border: 2px solid rgba(0, 210, 255, 0.75);
+            animation: borderGlowCyan 4s ease-in-out infinite alternate;
+        }
+        @keyframes borderGlowCyan {
+            0% {
+                border-color: rgba(0, 210, 255, 0.55);
+                box-shadow: 0 0 16px rgba(0, 210, 255, 0.2), 0 0 35px rgba(2, 132, 199, 0.12), inset 0 0 12px rgba(0, 210, 255, 0.08);
+            }
+            50% {
+                border-color: rgba(56, 189, 248, 0.95);
+                box-shadow: 0 0 30px rgba(56, 189, 248, 0.48), 0 0 60px rgba(0, 210, 255, 0.25), inset 0 0 25px rgba(0, 210, 255, 0.18);
+            }
+            100% {
+                border-color: rgba(0, 210, 255, 0.65);
+                box-shadow: 0 0 20px rgba(0, 210, 255, 0.28), 0 0 42px rgba(2, 132, 199, 0.15), inset 0 0 15px rgba(0, 210, 255, 0.1);
+            }
+        }
+
+        /* 3. Holy Fire */
+        #reading-container.border-glow-holy_fire {
+            border: 2px solid rgba(239, 68, 68, 0.75);
+            animation: borderGlowFire 3.5s ease-in-out infinite alternate;
+        }
+        @keyframes borderGlowFire {
+            0% {
+                border-color: rgba(239, 68, 68, 0.55);
+                box-shadow: 0 0 16px rgba(239, 68, 68, 0.2), 0 0 35px rgba(249, 115, 22, 0.12), inset 0 0 12px rgba(239, 68, 68, 0.08);
+            }
+            50% {
+                border-color: rgba(251, 146, 60, 0.95);
+                box-shadow: 0 0 30px rgba(249, 115, 22, 0.48), 0 0 60px rgba(239, 68, 68, 0.28), inset 0 0 25px rgba(249, 115, 22, 0.18);
+            }
+            100% {
+                border-color: rgba(239, 68, 68, 0.65);
+                box-shadow: 0 0 20px rgba(239, 68, 68, 0.28), 0 0 42px rgba(249, 115, 22, 0.15), inset 0 0 15px rgba(239, 68, 68, 0.1);
+            }
+        }
+
+        /* 4. Royal Amethyst */
+        #reading-container.border-glow-royal_amethyst {
+            border: 2px solid rgba(168, 85, 247, 0.75);
+            animation: borderGlowAmethyst 4.5s ease-in-out infinite alternate;
+        }
+        @keyframes borderGlowAmethyst {
+            0% {
+                border-color: rgba(168, 85, 247, 0.55);
+                box-shadow: 0 0 16px rgba(168, 85, 247, 0.2), 0 0 35px rgba(147, 51, 234, 0.12), inset 0 0 12px rgba(168, 85, 247, 0.08);
+            }
+            50% {
+                border-color: rgba(192, 132, 252, 0.95);
+                box-shadow: 0 0 30px rgba(192, 132, 252, 0.48), 0 0 60px rgba(168, 85, 247, 0.28), inset 0 0 25px rgba(168, 85, 247, 0.18);
+            }
+            100% {
+                border-color: rgba(168, 85, 247, 0.65);
+                box-shadow: 0 0 20px rgba(168, 85, 247, 0.28), 0 0 42px rgba(147, 51, 234, 0.15), inset 0 0 15px rgba(168, 85, 247, 0.1);
+            }
+        }
+
+        /* 5. Covenant Prism */
+        #reading-container.border-glow-covenant_prism {
+            border: 2px solid rgba(245, 158, 11, 0.7);
+            animation: borderGlowPrism 7s linear infinite;
+        }
+        @keyframes borderGlowPrism {
+            0% {
+                border-color: rgba(239, 68, 68, 0.75);
+                box-shadow: 0 0 22px rgba(239, 68, 68, 0.35), 0 0 45px rgba(245, 158, 11, 0.18), inset 0 0 16px rgba(239, 68, 68, 0.12);
+            }
+            20% {
+                border-color: rgba(245, 158, 11, 0.75);
+                box-shadow: 0 0 22px rgba(245, 158, 11, 0.35), 0 0 45px rgba(16, 185, 129, 0.18), inset 0 0 16px rgba(245, 158, 11, 0.12);
+            }
+            40% {
+                border-color: rgba(16, 185, 129, 0.75);
+                box-shadow: 0 0 22px rgba(16, 185, 129, 0.35), 0 0 45px rgba(6, 182, 212, 0.18), inset 0 0 16px rgba(16, 185, 129, 0.12);
+            }
+            60% {
+                border-color: rgba(6, 182, 212, 0.75);
+                box-shadow: 0 0 22px rgba(6, 182, 212, 0.35), 0 0 45px rgba(168, 85, 247, 0.18), inset 0 0 16px rgba(6, 182, 212, 0.12);
+            }
+            80% {
+                border-color: rgba(168, 85, 247, 0.75);
+                box-shadow: 0 0 22px rgba(168, 85, 247, 0.35), 0 0 45px rgba(239, 68, 68, 0.18), inset 0 0 16px rgba(168, 85, 247, 0.12);
+            }
+            100% {
+                border-color: rgba(239, 68, 68, 0.75);
+                box-shadow: 0 0 22px rgba(239, 68, 68, 0.35), 0 0 45px rgba(245, 158, 11, 0.18), inset 0 0 16px rgba(239, 68, 68, 0.12);
+            }
+        }
+
+        /* 6. Living Emerald */
+        #reading-container.border-glow-emerald_life {
+            border: 2px solid rgba(16, 185, 129, 0.75);
+            animation: borderGlowEmerald 4.5s ease-in-out infinite alternate;
+        }
+        @keyframes borderGlowEmerald {
+            0% {
+                border-color: rgba(16, 185, 129, 0.55);
+                box-shadow: 0 0 16px rgba(16, 185, 129, 0.2), 0 0 35px rgba(5, 150, 105, 0.12), inset 0 0 12px rgba(16, 185, 129, 0.08);
+            }
+            50% {
+                border-color: rgba(52, 211, 153, 0.95);
+                box-shadow: 0 0 30px rgba(52, 211, 153, 0.48), 0 0 60px rgba(16, 185, 129, 0.28), inset 0 0 25px rgba(16, 185, 129, 0.18);
+            }
+            100% {
+                border-color: rgba(16, 185, 129, 0.65);
+                box-shadow: 0 0 20px rgba(16, 185, 129, 0.28), 0 0 42px rgba(5, 150, 105, 0.15), inset 0 0 15px rgba(16, 185, 129, 0.1);
+            }
+        }
+
+        /* 7. Pure Moonlight */
+        #reading-container.border-glow-pure_light {
+            border: 2px solid rgba(255, 255, 255, 0.75);
+            animation: borderGlowMoon 4s ease-in-out infinite alternate;
+        }
+        @keyframes borderGlowMoon {
+            0% {
+                border-color: rgba(255, 255, 255, 0.5);
+                box-shadow: 0 0 16px rgba(255, 255, 255, 0.25), 0 0 35px rgba(226, 232, 240, 0.15), inset 0 0 12px rgba(255, 255, 255, 0.1);
+            }
+            50% {
+                border-color: rgba(255, 255, 255, 0.95);
+                box-shadow: 0 0 30px rgba(255, 255, 255, 0.55), 0 0 60px rgba(255, 255, 255, 0.3), inset 0 0 25px rgba(255, 255, 255, 0.22);
+            }
+            100% {
+                border-color: rgba(255, 255, 255, 0.6);
+                box-shadow: 0 0 20px rgba(255, 255, 255, 0.3), 0 0 42px rgba(226, 232, 240, 0.18), inset 0 0 15px rgba(255, 255, 255, 0.12);
+            }
+        }
     </style>
 </head>
 
@@ -506,8 +850,102 @@
                             <label class="text-[8px] font-bold uppercase tracking-wider text-gray-400 mb-0.5">Text Color</label>
                             <input type="color" class="custom-text-picker w-full h-6 cursor-pointer bg-transparent border-none p-0 rounded-sm">
                         </div>
-                        <button class="reset-colors-btn glass-input h-[52px] px-3 rounded-lg flex items-center justify-center text-gray-400 hover:text-primary transition-colors" title="Reset Colors">
+                        <button class="reset-colors-btn glass-input h-[52px] px-3 rounded-lg flex items-center justify-center text-gray-400 hover:text-primary transition-colors cursor-pointer" title="Reset Colors">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 3. LIVE ANIMATED BACKGROUND EFFECTS -->
+                <div class="pt-5 border-t border-gray-200 dark:border-white/5">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Live Atmospheric Effects</label>
+                        <span id="active-live-effect-badge" class="text-[10px] font-bold text-primary px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20">Theme Default</span>
+                    </div>
+                    <p class="text-[11px] text-gray-500 dark:text-gray-400 mb-2.5">Subtle ambient motion for presets and custom themes</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5" id="live-effects-options-grid">
+                        <button type="button" class="live-effect-option-btn text-left p-2 rounded-xl border border-gray-200/80 dark:border-white/10 glass-input hover:border-primary/50 transition-all text-xs flex items-center justify-between cursor-pointer active ring-2 ring-primary border-primary" data-effect="theme_default">
+                            <span class="font-semibold truncate">Theme Default</span>
+                            <span class="w-2 h-2 rounded-full bg-primary live-effect-dot"></span>
+                        </button>
+                        <button type="button" class="live-effect-option-btn text-left p-2 rounded-xl border border-gray-200/80 dark:border-white/10 glass-input hover:border-primary/50 transition-all text-xs flex items-center justify-between cursor-pointer" data-effect="none">
+                            <span class="font-medium text-gray-500 dark:text-gray-400 truncate">Static (None)</span>
+                            <span class="w-2 h-2 rounded-full bg-gray-400/40 live-effect-dot"></span>
+                        </button>
+                        <button type="button" class="live-effect-option-btn text-left p-2 rounded-xl border border-gray-200/80 dark:border-white/10 glass-input hover:border-primary/50 transition-all text-xs flex items-center justify-between cursor-pointer" data-effect="night_sky">
+                            <span class="font-semibold text-blue-500 dark:text-blue-400 truncate">Night Sky</span>
+                            <span class="w-2 h-2 rounded-full bg-blue-500 live-effect-dot"></span>
+                        </button>
+                        <button type="button" class="live-effect-option-btn text-left p-2 rounded-xl border border-gray-200/80 dark:border-white/10 glass-input hover:border-primary/50 transition-all text-xs flex items-center justify-between cursor-pointer" data-effect="neon_blue">
+                            <span class="font-semibold text-cyan-500 dark:text-cyan-400 truncate">Living Waters</span>
+                            <span class="w-2 h-2 rounded-full bg-cyan-400 live-effect-dot"></span>
+                        </button>
+                        <button type="button" class="live-effect-option-btn text-left p-2 rounded-xl border border-gray-200/80 dark:border-white/10 glass-input hover:border-primary/50 transition-all text-xs flex items-center justify-between cursor-pointer" data-effect="yellow_halo">
+                            <span class="font-semibold text-amber-500 dark:text-amber-400 truncate">Divine Aureole</span>
+                            <span class="w-2 h-2 rounded-full bg-amber-400 live-effect-dot"></span>
+                        </button>
+                        <button type="button" class="live-effect-option-btn text-left p-2 rounded-xl border border-gray-200/80 dark:border-white/10 glass-input hover:border-primary/50 transition-all text-xs flex items-center justify-between cursor-pointer" data-effect="golden_age">
+                            <span class="font-semibold text-yellow-600 dark:text-yellow-400 truncate">Candlelight</span>
+                            <span class="w-2 h-2 rounded-full bg-yellow-500 live-effect-dot"></span>
+                        </button>
+                        <button type="button" class="live-effect-option-btn text-left p-2 rounded-xl border border-gray-200/80 dark:border-white/10 glass-input hover:border-primary/50 transition-all text-xs flex items-center justify-between cursor-pointer" data-effect="red_rose">
+                            <span class="font-semibold text-rose-500 dark:text-rose-400 truncate">Velvet Crimson</span>
+                            <span class="w-2 h-2 rounded-full bg-rose-500 live-effect-dot"></span>
+                        </button>
+                        <button type="button" class="live-effect-option-btn text-left p-2 rounded-xl border border-gray-200/80 dark:border-white/10 glass-input hover:border-primary/50 transition-all text-xs flex items-center justify-between cursor-pointer" data-effect="eden_sage">
+                            <span class="font-semibold text-emerald-600 dark:text-emerald-400 truncate">Eden Laurel</span>
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 live-effect-dot"></span>
+                        </button>
+                        <button type="button" class="live-effect-option-btn text-left p-2 rounded-xl border border-gray-200/80 dark:border-white/10 glass-input hover:border-primary/50 transition-all text-xs flex items-center justify-between cursor-pointer" data-effect="royal_aurora">
+                            <span class="font-semibold text-purple-600 dark:text-purple-400 truncate">Royal Aurora</span>
+                            <span class="w-2 h-2 rounded-full bg-purple-500 live-effect-dot"></span>
+                        </button>
+                        <button type="button" class="live-effect-option-btn text-left p-2 rounded-xl border border-gray-200/80 dark:border-white/10 glass-input hover:border-primary/50 transition-all text-xs flex items-center justify-between cursor-pointer" data-effect="morning_dew">
+                            <span class="font-semibold text-amber-600 dark:text-amber-300 truncate">Dawn Radiance</span>
+                            <span class="w-2 h-2 rounded-full bg-amber-300 live-effect-dot"></span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 4. GLOWING BORDER AROUND READING AREA (ALL FOUR SIDES) -->
+                <div class="pt-5 border-t border-gray-200 dark:border-white/5">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Glowing Reading Border</label>
+                        <span id="active-glowing-border-badge" class="text-[10px] font-bold text-gray-400 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/10 border border-gray-200 dark:border-white/10">Disabled</span>
+                    </div>
+                    <p class="text-[11px] text-gray-500 dark:text-gray-400 mb-2.5">Animated all-four-sides luminous border framing the scripture reading area (Default: Disabled)</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5" id="glowing-border-options-grid">
+                        <button type="button" class="glowing-border-option-btn text-left p-2 rounded-xl border border-gray-200/80 dark:border-white/10 glass-input hover:border-primary/50 transition-all text-xs flex flex-col justify-between cursor-pointer active ring-2 ring-primary border-primary" data-border="disabled">
+                            <span class="font-semibold truncate">Disabled</span>
+                            <span class="text-[9px] text-gray-400 mt-1">Default (Off)</span>
+                        </button>
+                        <button type="button" class="glowing-border-option-btn text-left p-2 rounded-xl border border-gray-200/80 dark:border-white/10 glass-input hover:border-primary/50 transition-all text-xs flex flex-col justify-between cursor-pointer" data-border="divine_gold">
+                            <span class="font-semibold text-amber-500 dark:text-amber-400 truncate">Divine Gold</span>
+                            <span class="text-[9px] text-gray-400 mt-1">Sacred shimmer</span>
+                        </button>
+                        <button type="button" class="glowing-border-option-btn text-left p-2 rounded-xl border border-gray-200/80 dark:border-white/10 glass-input hover:border-primary/50 transition-all text-xs flex flex-col justify-between cursor-pointer" data-border="living_waters">
+                            <span class="font-semibold text-cyan-500 dark:text-cyan-400 truncate">Living Waters</span>
+                            <span class="text-[9px] text-gray-400 mt-1">Cyan neon pulse</span>
+                        </button>
+                        <button type="button" class="glowing-border-option-btn text-left p-2 rounded-xl border border-gray-200/80 dark:border-white/10 glass-input hover:border-primary/50 transition-all text-xs flex flex-col justify-between cursor-pointer" data-border="holy_fire">
+                            <span class="font-semibold text-rose-500 dark:text-rose-400 truncate">Holy Fire</span>
+                            <span class="text-[9px] text-gray-400 mt-1">Amber & ruby embers</span>
+                        </button>
+                        <button type="button" class="glowing-border-option-btn text-left p-2 rounded-xl border border-gray-200/80 dark:border-white/10 glass-input hover:border-primary/50 transition-all text-xs flex flex-col justify-between cursor-pointer" data-border="royal_amethyst">
+                            <span class="font-semibold text-purple-600 dark:text-purple-400 truncate">Royal Amethyst</span>
+                            <span class="text-[9px] text-gray-400 mt-1">Liturgical violet</span>
+                        </button>
+                        <button type="button" class="glowing-border-option-btn text-left p-2 rounded-xl border border-gray-200/80 dark:border-white/10 glass-input hover:border-primary/50 transition-all text-xs flex flex-col justify-between cursor-pointer" data-border="covenant_prism">
+                            <span class="font-semibold text-indigo-500 dark:text-indigo-400 truncate">Covenant Prism</span>
+                            <span class="text-[9px] text-gray-400 mt-1">Spectrum wave</span>
+                        </button>
+                        <button type="button" class="glowing-border-option-btn text-left p-2 rounded-xl border border-gray-200/80 dark:border-white/10 glass-input hover:border-primary/50 transition-all text-xs flex flex-col justify-between cursor-pointer" data-border="emerald_life">
+                            <span class="font-semibold text-emerald-600 dark:text-emerald-400 truncate">Living Emerald</span>
+                            <span class="text-[9px] text-gray-400 mt-1">Verdant clover</span>
+                        </button>
+                        <button type="button" class="glowing-border-option-btn text-left p-2 rounded-xl border border-gray-200/80 dark:border-white/10 glass-input hover:border-primary/50 transition-all text-xs flex flex-col justify-between cursor-pointer" data-border="pure_light">
+                            <span class="font-semibold text-gray-800 dark:text-gray-100 truncate">Pure Moonlight</span>
+                            <span class="text-[9px] text-gray-400 mt-1">Luminous pearl</span>
                         </button>
                     </div>
                 </div>
@@ -776,11 +1214,11 @@
         </div>
     </div>
 
-    <!-- Quote Modal -->
-    <div id="quote-modal" class="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center p-3 md:p-6 z-50 hidden transition-opacity">
-        <div class="glass-panel modal-enter w-full max-w-2xl max-h-[92vh] flex flex-col rounded-2xl overflow-hidden shadow-2xl">
-            <div class="flex justify-between items-center p-4 md:p-5 border-b border-gray-100 dark:border-white/5 bg-white/40 dark:bg-black/40">
-                <div class="flex items-center gap-2">
+    <!-- Quote Studio Modal -->
+    <div id="quote-modal" class="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-3 md:p-6 z-50 hidden transition-opacity">
+        <div class="glass-panel modal-enter w-full max-w-lg lg:max-w-6xl xl:max-w-7xl max-h-[92vh] flex flex-col rounded-3xl shadow-2xl overflow-hidden">
+            <div class="flex justify-between items-center p-4 md:p-5 border-b border-gray-100 dark:border-white/5 bg-white/40 dark:bg-black/40 shrink-0">
+                <div class="flex items-center gap-2.5">
                     <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     </div>
@@ -789,122 +1227,131 @@
                         <p class="text-[11px] text-gray-500 dark:text-gray-400">Design and share aesthetic scripture art</p>
                     </div>
                 </div>
-                <button id="close-quote-modal-btn" class="p-1.5 rounded-full text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-white/10 transition-all"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                <button id="close-quote-modal-btn" class="p-1.5 rounded-full text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-white/10 transition-all cursor-pointer"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
             </div>
             
-            <div class="p-4 md:p-6 overflow-y-auto space-y-5">
-                <!-- LIVE VISUAL CANVAS PREVIEW -->
-                <div>
-                    <div class="flex justify-between items-center mb-1.5">
-                        <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Live Artwork Preview</label>
-                        <!-- Aspect Ratio Switcher -->
-                        <div class="flex bg-gray-100 dark:bg-white/5 p-0.5 rounded-lg text-[10px] font-bold">
-                            <button type="button" class="quote-ratio-btn px-2.5 py-1 rounded-md transition-all active bg-white dark:bg-white/10 text-primary shadow-xs" data-ratio="1:1">1:1 Square</button>
-                            <button type="button" class="quote-ratio-btn px-2.5 py-1 rounded-md transition-all text-gray-500 dark:text-gray-400" data-ratio="9:16">9:16 Story</button>
-                            <button type="button" class="quote-ratio-btn px-2.5 py-1 rounded-md transition-all text-gray-500 dark:text-gray-400" data-ratio="16:9">16:9 Wide</button>
-                        </div>
-                    </div>
-                    
-                    <div class="w-full bg-gray-200/60 dark:bg-black/60 rounded-xl p-3 flex items-center justify-center min-h-[220px] max-h-[340px] overflow-hidden border border-gray-200/80 dark:border-white/5">
-                        <div id="quote-live-preview-box" class="rounded-xl shadow-xl flex flex-col justify-between p-6 transition-all duration-200 relative overflow-hidden text-center" style="width: 280px; height: 280px; background-color: #111111; color: #FFFFFF; font-family: 'Crimson Pro', serif;">
-                            <div class="absolute inset-0 bg-cover bg-center transition-all opacity-40 hidden" id="quote-preview-bg-img"></div>
-                            <div class="relative z-10 my-auto">
-                                <p id="quote-preview-text" class="text-sm md:text-base leading-relaxed italic font-normal">“In the beginning was the Word, and the Word was with God, and the Word was God.”</p>
-                            </div>
-                            <div class="relative z-10 pt-3 border-t border-current/20">
-                                <p id="quote-preview-ref" class="text-xs font-semibold tracking-wider uppercase opacity-90">— John 1:1</p>
-                                <span class="text-[8px] opacity-60 uppercase tracking-widest mt-0.5 block">Biblia Sacra</span>
+            <!-- 2-Column Responsive Body: Preview Left, Customization Right on Desktop -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 overflow-y-auto divide-y lg:divide-y-0 lg:divide-x divide-gray-100 dark:divide-white/5 flex-1 min-h-0">
+                
+                <!-- LEFT COLUMN: LIVE ARTWORK PREVIEW & BACKGROUND PHOTO -->
+                <div class="lg:col-span-5 p-4 md:p-6 flex flex-col justify-start space-y-4 bg-gray-50/40 dark:bg-black/20 overflow-y-auto">
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Live Artwork Preview</label>
+                            <!-- Aspect Ratio Switcher -->
+                            <div class="flex bg-gray-100 dark:bg-white/5 p-0.5 rounded-lg text-[10px] font-bold">
+                                <button type="button" class="quote-ratio-btn px-2.5 py-1 rounded-md transition-all active bg-white dark:bg-white/10 text-primary shadow-xs cursor-pointer" data-ratio="1:1">1:1 Square</button>
+                                <button type="button" class="quote-ratio-btn px-2.5 py-1 rounded-md transition-all text-gray-500 dark:text-gray-400 cursor-pointer" data-ratio="9:16">9:16 Story</button>
+                                <button type="button" class="quote-ratio-btn px-2.5 py-1 rounded-md transition-all text-gray-500 dark:text-gray-400 cursor-pointer" data-ratio="16:9">16:9 Wide</button>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Quick Scripture Inspiration -->
-                <div>
-                    <div class="flex justify-between items-center mb-1.5">
-                        <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400">Quick Scripture Inspiration</label>
-                        <button type="button" id="quote-random-inspire-btn" class="text-[10px] font-bold text-primary hover:underline flex items-center gap-1">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                            Random Verse
-                        </button>
-                    </div>
-                    <div class="flex flex-wrap gap-1.5" id="quote-inspiration-chips">
-                        <button type="button" class="quote-inspire-btn text-[10px] font-semibold px-2 py-1 rounded-md btn-secondary hover:text-primary transition-colors" data-book="John" data-chapter="3" data-from="16" data-to="16">John 3:16</button>
-                        <button type="button" class="quote-inspire-btn text-[10px] font-semibold px-2 py-1 rounded-md btn-secondary hover:text-primary transition-colors" data-book="Psalms" data-chapter="23" data-from="1" data-to="1">Psalm 23:1</button>
-                        <button type="button" class="quote-inspire-btn text-[10px] font-semibold px-2 py-1 rounded-md btn-secondary hover:text-primary transition-colors" data-book="Philippians" data-chapter="4" data-from="13" data-to="13">Phil 4:13</button>
-                        <button type="button" class="quote-inspire-btn text-[10px] font-semibold px-2 py-1 rounded-md btn-secondary hover:text-primary transition-colors" data-book="Romans" data-chapter="8" data-from="28" data-to="28">Rom 8:28</button>
-                        <button type="button" class="quote-inspire-btn text-[10px] font-semibold px-2 py-1 rounded-md btn-secondary hover:text-primary transition-colors" data-book="Proverbs" data-chapter="3" data-from="5" data-to="6">Prov 3:5–6</button>
-                        <button type="button" class="quote-inspire-btn text-[10px] font-semibold px-2 py-1 rounded-md btn-secondary hover:text-primary transition-colors" data-book="Genesis" data-chapter="1" data-from="1" data-to="1">Gen 1:1</button>
-                    </div>
-                </div>
-
-                <!-- Scripture Selection -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5">
-                    <div><label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">Book</label><select id="quote-book-select" class="glass-input w-full p-2 rounded-lg text-xs outline-none"></select></div>
-                    <div><label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">Chapter</label><select id="quote-chapter-select" class="glass-input w-full p-2 rounded-lg text-xs outline-none"></select></div>
-                    <div><label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">From Verse</label><input type="number" id="quote-verse-from" class="glass-input w-full p-2 rounded-lg text-xs outline-none" min="1" value="1"></div>
-                    <div><label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">To Verse</label><input type="number" id="quote-verse-to" class="glass-input w-full p-2 rounded-lg text-xs outline-none" min="1" value="1"></div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">Translation</label>
-                        <select id="translation-select-quote" class="glass-input w-full p-2 rounded-lg text-xs outline-none"></select>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">Font Family</label>
-                        <select id="quote-font-select" class="glass-input w-full p-2 rounded-lg text-xs outline-none"></select>
-                    </div>
-                </div>
-
-                <!-- Color & Aesthetic Presets -->
-                <div>
-                    <div class="flex justify-between items-center mb-1.5">
-                        <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400">Palette & Aesthetic Presets</label>
-                        <div class="flex gap-2 items-center">
-                            <span class="text-[10px] text-gray-400">Custom Colors:</span>
-                            <input type="color" id="quote-bg-color" value="#111111" class="w-6 h-6 rounded-md cursor-pointer border-0 p-0" title="Background Color">
-                            <input type="color" id="quote-text-color" value="#FFFFFF" class="w-6 h-6 rounded-md cursor-pointer border-0 p-0" title="Text Color">
+                        
+                        <div class="w-full bg-gray-200/60 dark:bg-black/60 rounded-2xl p-4 flex items-center justify-center min-h-[260px] lg:min-h-[350px] overflow-hidden border border-gray-200/80 dark:border-white/5 shadow-inner">
+                            <div id="quote-live-preview-box" class="rounded-xl shadow-2xl flex flex-col justify-between p-5 transition-all duration-200 relative overflow-hidden text-center" style="width: 280px; height: 280px; background-color: #111111; color: #FFFFFF; font-family: 'Crimson Pro', serif;">
+                                <div class="absolute inset-0 bg-cover bg-center transition-all opacity-40 hidden" id="quote-preview-bg-img"></div>
+                                <div class="relative z-10 my-auto px-1">
+                                    <p id="quote-preview-text" class="text-sm md:text-base leading-relaxed italic font-normal">“In the beginning was the Word, and the Word was with God, and the Word was God.”</p>
+                                </div>
+                                <div class="relative z-10 pt-3 border-t border-current/20 flex flex-col items-center">
+                                    <p id="quote-preview-ref" class="text-xs font-semibold tracking-wider uppercase opacity-90">— John 1:1</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="flex flex-wrap gap-1.5" id="quote-palette-presets">
-                        <button type="button" class="quote-palette-chip text-[10px] font-semibold px-2.5 py-1 rounded-lg border border-gray-200/60 dark:border-white/10" data-bg="#111111" data-text="#FFFFFF" data-font="Crimson Pro" style="background: #111111; color: #FFFFFF;">Velvet Noir</button>
-                        <button type="button" class="quote-palette-chip text-[10px] font-semibold px-2.5 py-1 rounded-lg border border-gray-200/60 dark:border-white/10" data-bg="#070e1c" data-text="#e2e8f0" data-font="Lora" style="background: #070e1c; color: #e2e8f0;">Night Sky</button>
-                        <button type="button" class="quote-palette-chip text-[10px] font-semibold px-2.5 py-1 rounded-lg border border-gray-200/60 dark:border-white/10" data-bg="#13091f" data-text="#f3e8ff" data-font="Merriweather" style="background: #13091f; color: #f3e8ff;">Royal Amethyst</button>
-                        <button type="button" class="quote-palette-chip text-[10px] font-semibold px-2.5 py-1 rounded-lg border border-gray-200/60 dark:border-white/10" data-bg="#13100a" data-text="#fef08a" data-font="Crimson Pro" style="background: #13100a; color: #fef08a;">Golden Age</button>
-                        <button type="button" class="quote-palette-chip text-[10px] font-semibold px-2.5 py-1 rounded-lg border border-gray-200/60 dark:border-white/10" data-bg="#f4ebd9" data-text="#382b1d" data-font="Tinos" style="background: #f4ebd9; color: #382b1d;">Ancient Scroll</button>
-                        <button type="button" class="quote-palette-chip text-[10px] font-semibold px-2.5 py-1 rounded-lg border border-gray-200/60 dark:border-white/10" data-bg="#eaf4ee" data-text="#123924" data-font="Lora" style="background: #eaf4ee; color: #123924;">Eden Sage</button>
-                        <button type="button" class="quote-palette-chip text-[10px] font-semibold px-2.5 py-1 rounded-lg border border-gray-200/60 dark:border-white/10" data-bg="#17070b" data-text="#ffe4e6" data-font="Playfair Display" style="background: #17070b; color: #ffe4e6;">Red Rose</button>
-                        <button type="button" class="quote-palette-chip text-[10px] font-semibold px-2.5 py-1 rounded-lg border border-gray-200/60 dark:border-white/10" data-bg="#040a17" data-text="#e0f2fe" data-font="Oswald" style="background: #040a17; color: #e0f2fe;">Neon Blue</button>
-                        <button type="button" class="quote-palette-chip text-[10px] font-semibold px-2.5 py-1 rounded-lg border border-gray-200/60 dark:border-white/10" data-bg="#ffffff" data-text="#18181b" data-font="Inter" style="background: #ffffff; color: #18181b;">Pure White</button>
+
+                    <!-- Background Photo (Pexels) -->
+                    <div class="space-y-2 pt-2 border-t border-gray-200/80 dark:border-white/5">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400">Background Photo (Pexels)</label>
+                            <button type="button" id="clear-bg-image-btn" class="hidden text-[10px] font-bold uppercase text-red-500 hover:text-red-400 transition-colors cursor-pointer">Clear Photo</button>
+                        </div>
+                        <div class="flex gap-2 mb-2">
+                            <input type="text" id="pexels-search-input" class="glass-input flex-grow p-2 rounded-lg text-xs outline-none placeholder-gray-400" placeholder="e.g. dawn, mountains, stars, church">
+                            <button type="button" id="pexels-search-btn" class="btn-secondary text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0 cursor-pointer">Search</button>
+                        </div>
+                        <div id="pexels-results" class="flex gap-2 overflow-x-auto pb-2 hidden custom-scrollbar"></div>
                     </div>
                 </div>
 
-                <!-- Pexels Photo Search -->
-                <div class="pt-2 border-t border-gray-100 dark:border-white/5">
-                    <div class="flex justify-between items-center mb-1.5">
-                        <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400">Background Photo (Pexels Photography)</label>
-                        <button id="clear-bg-image-btn" class="hidden text-[10px] font-bold uppercase text-red-500 hover:text-red-400 transition-colors">Clear Photo</button>
+                <!-- RIGHT COLUMN: CUSTOMIZATION OPTIONS -->
+                <div class="lg:col-span-7 p-4 md:p-6 space-y-4 overflow-y-auto">
+                    <!-- Quick Scripture Inspiration -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400">Quick Scripture Inspiration</label>
+                            <button type="button" id="quote-random-inspire-btn" class="text-[10px] font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                Random Verse
+                            </button>
+                        </div>
+                        <div class="flex flex-wrap gap-1.5" id="quote-inspiration-chips"></div>
                     </div>
-                    <div class="flex gap-2 mb-2">
-                        <input type="text" id="pexels-search-input" class="glass-input flex-grow p-2 rounded-lg text-xs outline-none placeholder-gray-400" placeholder="e.g. dawn, mountains, starry sky, church">
-                        <button id="pexels-search-btn" class="btn-secondary text-xs font-semibold px-3 py-1.5 rounded-lg">Search Photos</button>
-                    </div>
-                    <div id="pexels-results" class="flex gap-2 overflow-x-auto pb-2 hidden custom-scrollbar"></div>
-                </div>
 
-                <!-- Bottom Export Actions -->
-                <div class="flex flex-col sm:flex-row gap-2 pt-2 border-t border-gray-100 dark:border-white/5">
-                    <button id="copy-quote-clipboard-btn" class="flex-1 btn-secondary font-semibold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
-                        <span>Copy to Clipboard</span>
+                    <!-- Scripture Selection -->
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1.5">Scripture Passage</label>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <div><label class="block text-[9px] font-semibold text-gray-400 mb-0.5">Book</label><select id="quote-book-select" class="glass-input w-full p-2 rounded-lg text-xs outline-none"></select></div>
+                            <div><label class="block text-[9px] font-semibold text-gray-400 mb-0.5">Chapter</label><select id="quote-chapter-select" class="glass-input w-full p-2 rounded-lg text-xs outline-none"></select></div>
+                            <div><label class="block text-[9px] font-semibold text-gray-400 mb-0.5">From Verse</label><input type="number" id="quote-verse-from" class="glass-input w-full p-2 rounded-lg text-xs outline-none" min="1" value="1"></div>
+                            <div><label class="block text-[9px] font-semibold text-gray-400 mb-0.5">To Verse</label><input type="number" id="quote-verse-to" class="glass-input w-full p-2 rounded-lg text-xs outline-none" min="1" value="1"></div>
+                        </div>
+                    </div>
+
+                    <!-- Translation & Font Family -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">Translation</label>
+                            <select id="translation-select-quote" class="glass-input w-full p-2 rounded-lg text-xs outline-none"></select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">Font Family</label>
+                            <select id="quote-font-select" class="glass-input w-full p-2 rounded-lg text-xs outline-none"></select>
+                        </div>
+                    </div>
+
+                    <!-- Color & Aesthetic Presets -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400">Palette Presets</label>
+                            <div class="flex gap-2 items-center">
+                                <span class="text-[10px] text-gray-400">Custom Colors:</span>
+                                <input type="color" id="quote-bg-color" value="#111111" class="w-6 h-6 rounded-md cursor-pointer border-0 p-0" title="Background Color">
+                                <input type="color" id="quote-text-color" value="#FFFFFF" class="w-6 h-6 rounded-md cursor-pointer border-0 p-0" title="Text Color">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-1.5" id="quote-palette-presets">
+                            <button type="button" class="quote-palette-chip text-[10px] font-semibold px-2 py-1.5 rounded-lg border border-gray-200/60 dark:border-white/10 text-center cursor-pointer" data-bg="#111111" data-text="#FFFFFF" data-font="Crimson Pro" style="background: #111111; color: #FFFFFF;">Velvet Noir</button>
+                            <button type="button" class="quote-palette-chip text-[10px] font-semibold px-2 py-1.5 rounded-lg border border-gray-200/60 dark:border-white/10 text-center cursor-pointer" data-bg="#070e1c" data-text="#e2e8f0" data-font="Lora" style="background: #070e1c; color: #e2e8f0;">Night Sky</button>
+                            <button type="button" class="quote-palette-chip text-[10px] font-semibold px-2 py-1.5 rounded-lg border border-gray-200/60 dark:border-white/10 text-center cursor-pointer" data-bg="#13091f" data-text="#f3e8ff" data-font="Merriweather" style="background: #13091f; color: #f3e8ff;">Royal Amethyst</button>
+                            <button type="button" class="quote-palette-chip text-[10px] font-semibold px-2 py-1.5 rounded-lg border border-gray-200/60 dark:border-white/10 text-center cursor-pointer" data-bg="#13100a" data-text="#fef08a" data-font="Crimson Pro" style="background: #13100a; color: #fef08a;">Golden Age</button>
+                            <button type="button" class="quote-palette-chip text-[10px] font-semibold px-2 py-1.5 rounded-lg border border-gray-200/60 dark:border-white/10 text-center cursor-pointer" data-bg="#f4ebd9" data-text="#382b1d" data-font="Tinos" style="background: #f4ebd9; color: #382b1d;">Ancient Scroll</button>
+                            <button type="button" class="quote-palette-chip text-[10px] font-semibold px-2 py-1.5 rounded-lg border border-gray-200/60 dark:border-white/10 text-center cursor-pointer" data-bg="#eaf4ee" data-text="#123924" data-font="Lora" style="background: #eaf4ee; color: #123924;">Eden Sage</button>
+                            <button type="button" class="quote-palette-chip text-[10px] font-semibold px-2 py-1.5 rounded-lg border border-gray-200/60 dark:border-white/10 text-center cursor-pointer" data-bg="#17070b" data-text="#ffe4e6" data-font="Playfair Display" style="background: #17070b; color: #ffe4e6;">Red Rose</button>
+                            <button type="button" class="quote-palette-chip text-[10px] font-semibold px-2 py-1.5 rounded-lg border border-gray-200/60 dark:border-white/10 text-center cursor-pointer" data-bg="#040a17" data-text="#e0f2fe" data-font="Oswald" style="background: #040a17; color: #e0f2fe;">Neon Blue</button>
+                            <button type="button" class="quote-palette-chip text-[10px] font-semibold px-2 py-1.5 rounded-lg border border-gray-200/60 dark:border-white/10 text-center cursor-pointer" data-bg="#ffffff" data-text="#18181b" data-font="Inter" style="background: #ffffff; color: #18181b;">Pure White</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PINNED BOTTOM ACTION BAR: ALWAYS VISIBLE ON MOBILE, TABLET & DESKTOP (NO SCROLLING NEEDED) -->
+            <div class="p-3 sm:p-4 border-t border-gray-200/80 dark:border-white/10 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md shrink-0 flex items-center justify-between gap-3 z-30 shadow-lg">
+                <div class="hidden sm:flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>High-definition scripture artwork with watermark</span>
+                    <span id="quote-loader" class="hidden text-xs text-primary font-semibold ml-2 animate-pulse">Rendering artwork...</span>
+                </div>
+                <div class="flex items-center gap-2.5 w-full sm:w-auto">
+                    <button type="button" id="copy-quote-clipboard-btn" class="flex-1 sm:flex-none btn-secondary font-semibold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition-all hover:scale-[1.02] cursor-pointer">
+                        <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                        <span>Copy Image</span>
                     </button>
-                    <button id="generate-and-download-btn" class="flex-1 btn-primary font-semibold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 shadow-md">
+                    <button type="button" id="generate-and-download-btn" class="flex-1 sm:flex-none btn-primary font-semibold py-2.5 px-5 rounded-xl text-xs flex items-center justify-center gap-2 shadow-md transition-all hover:scale-[1.02] cursor-pointer">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                        <span>Download High-Res PNG</span>
+                        <span>Download PNG</span>
                     </button>
                 </div>
-                <div id="quote-loader" class="text-center hidden text-xs text-gray-500 font-medium">Rendering artwork...</div>
             </div>
         </div>
     </div>
@@ -926,19 +1373,41 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button id="import-notes-md-btn" class="btn-secondary text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5" title="Import notes from Markdown (.md) file">
-                        <svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                        <span>Import .md</span>
-                    </button>
-                    <input type="file" id="import-notes-file-input" accept=".md,text/markdown,text/plain" class="hidden">
-                    <button id="export-notes-md-btn" class="btn-secondary text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5" title="Export all notes as Markdown file">
-                        <svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        <span>Export .md</span>
-                    </button>
-                    <button id="copy-all-notes-btn" class="btn-secondary text-xs font-semibold px-2.5 py-1.5 rounded-lg hidden sm:flex items-center gap-1.5" title="Copy all notes to clipboard">
-                        <svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                        <span>Copy All</span>
-                    </button>
+                    <!-- Unified Expandable Markdown Action Menu (clean on mobile & desktop) -->
+                    <div class="relative" id="notes-markdown-menu-wrapper">
+                        <button type="button" id="notes-markdown-menu-btn" class="btn-secondary text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5" title="Markdown Notes (Import / Export)">
+                            <svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            <span>Markdown</span>
+                            <svg id="notes-markdown-menu-chevron" class="w-3 h-3 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        
+                        <!-- Dropdown Menu -->
+                        <div id="notes-markdown-dropdown" class="absolute right-0 top-full mt-1.5 w-48 rounded-xl glass-panel bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-gray-200/80 dark:border-white/10 shadow-2xl py-1.5 z-50 hidden transition-all">
+                            <button type="button" id="import-notes-md-btn" class="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-2.5">
+                                <svg class="w-3.5 h-3.5 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                                <div>
+                                    <div class="font-semibold leading-tight">Import .md</div>
+                                    <div class="text-[10px] text-gray-400">Load notes from file</div>
+                                </div>
+                            </button>
+                            <button type="button" id="export-notes-md-btn" class="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-2.5">
+                                <svg class="w-3.5 h-3.5 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                <div>
+                                    <div class="font-semibold leading-tight">Export .md</div>
+                                    <div class="text-[10px] text-gray-400">Save notes as Markdown</div>
+                                </div>
+                            </button>
+                            <div class="my-1 border-t border-gray-100 dark:border-white/5"></div>
+                            <button type="button" id="copy-all-notes-btn" class="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-2.5">
+                                <svg class="w-3.5 h-3.5 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                                <div>
+                                    <div class="font-semibold leading-tight">Copy All Notes</div>
+                                    <div class="text-[10px] text-gray-400">Copy to clipboard</div>
+                                </div>
+                            </button>
+                        </div>
+                        <input type="file" id="import-notes-file-input" accept=".md,text/markdown,text/plain" class="hidden">
+                    </div>
                     <button id="close-highlights-modal-btn" class="p-1.5 rounded-full text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-white/10 transition-all"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
                 </div>
             </div>
