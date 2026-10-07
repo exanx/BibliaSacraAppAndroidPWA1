@@ -62,18 +62,7 @@ const localDB = {
 };
 
 const FULL_THEMES = {
-    // === MAIN ===
-    pure_white: {
-        id: 'pure_white',
-        name: 'Pure White',
-        category: 'main',
-        mode: 'light',
-        bg: '#ffffff',
-        text: '#18181b',
-        font: 'Inter',
-        accent: { color: '#4f46e5', hover: '#4338ca', glow: 'rgba(79, 70, 229, 0.35)' },
-        desc: 'Crisp minimal daylight reading'
-    },
+    // === MAIN (Exactly 2 themes) ===
     amoled_black: {
         id: 'amoled_black',
         name: 'AMOLED Black',
@@ -85,41 +74,19 @@ const FULL_THEMES = {
         accent: { color: '#6366f1', hover: '#4f46e5', glow: 'rgba(99, 102, 241, 0.4)' },
         desc: 'Zero-emission pitch black for OLED'
     },
-    sepia_cathedral: {
-        id: 'sepia_cathedral',
-        name: 'Sepia Cathedral',
+    pure_white: {
+        id: 'pure_white',
+        name: 'Pure White',
         category: 'main',
         mode: 'light',
-        bg: '#f4ecd8',
-        text: '#45321f',
-        font: 'Merriweather',
-        accent: { color: '#b45309', hover: '#92400e', glow: 'rgba(180, 83, 9, 0.35)' },
-        desc: 'Beloved vintage study book tone'
-    },
-    olive_grove: {
-        id: 'olive_grove',
-        name: 'Olive Grove',
-        category: 'main',
-        mode: 'light',
-        bg: '#edf2ec',
-        text: '#1e382b',
-        font: 'Lora',
-        accent: { color: '#15803d', hover: '#166534', glow: 'rgba(21, 128, 61, 0.35)' },
-        desc: 'Calming natural sage eye-comfort'
-    },
-    cathedral_midnight: {
-        id: 'cathedral_midnight',
-        name: 'Cathedral Midnight',
-        category: 'main',
-        mode: 'dark',
-        bg: '#120d1c',
-        text: '#ede9fe',
-        font: 'Merriweather',
-        accent: { color: '#8b5cf6', hover: '#7c3aed', glow: 'rgba(139, 92, 246, 0.4)' },
-        desc: 'Contemplative deep sanctuary violet'
+        bg: '#ffffff',
+        text: '#18181b',
+        font: 'Inter',
+        accent: { color: '#4f46e5', hover: '#4338ca', glow: 'rgba(79, 70, 229, 0.35)' },
+        desc: 'Crisp minimal daylight reading'
     },
 
-    // === LIGHT ===
+    // === LIGHT (Exactly 6 themes) ===
     golden_parchment: {
         id: 'golden_parchment',
         name: 'Golden Parchment',
@@ -175,8 +142,19 @@ const FULL_THEMES = {
         accent: { color: '#0ea5e9', hover: '#0284c7', glow: 'rgba(14, 165, 233, 0.35)' },
         desc: 'Low-glare daytime reading ease'
     },
+    eden_sage: {
+        id: 'eden_sage',
+        name: 'Eden Sage',
+        category: 'light',
+        mode: 'light',
+        bg: '#eaf4ee',
+        text: '#123924',
+        font: 'Lora',
+        accent: { color: '#059669', hover: '#047857', glow: 'rgba(5, 150, 105, 0.4)' },
+        desc: 'Serene botanical clover & fresh laurel green'
+    },
 
-    // === DARK ===
+    // === DARK (Exactly 6 themes) ===
     red_rose: {
         id: 'red_rose',
         name: 'Red Rose',
@@ -231,6 +209,17 @@ const FULL_THEMES = {
         font: 'Roboto',
         accent: { color: '#94a3b8', hover: '#64748b', glow: 'rgba(148, 163, 184, 0.35)' },
         desc: 'Tactical matte slate & cool platinum'
+    },
+    royal_amethyst: {
+        id: 'royal_amethyst',
+        name: 'Royal Amethyst',
+        category: 'dark',
+        mode: 'dark',
+        bg: '#13091f',
+        text: '#f3e8ff',
+        font: 'Merriweather',
+        accent: { color: '#a855f7', hover: '#9333ea', glow: 'rgba(168, 85, 247, 0.45)' },
+        desc: 'Imperial liturgical violet & regal lilac'
     }
 };
 
@@ -265,6 +254,40 @@ let settingsUpdatedAt = 0;
 let highlights = {}, categories = {}, bookmarks = {}, lastRead = { book: 'Genesis', chapter: '1', verse: '1', timestamp: 0 }, staticBookData = {};
 
 let toastTimeout, currentHighlightsCategory = null, currentHighlightsSearch = '';
+let currentHighlightsNotesOnly = false, currentHighlightsSort = 'newest';
+let currentBookmarksSearch = '';
+let currentQuoteAspectRatio = '1:1';
+
+const CANONICAL_BOOK_ORDER = [
+    "Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth",
+    "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra",
+    "Nehemiah", "Esther", "Job", "Psalms", "Proverbs", "Ecclesiastes", "Song of Solomon",
+    "Isaiah", "Jeremiah", "Lamentations", "Ezekiel", "Daniel", "Hosea", "Joel", "Amos",
+    "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah", "Malachi",
+    "Matthew", "Mark", "Luke", "John", "Acts", "Romans", "1 Corinthians", "2 Corinthians",
+    "Galatians", "Ephesians", "Philippians", "Colossians", "1 Thessalonians", "2 Thessalonians",
+    "1 Timothy", "2 Timothy", "Titus", "Philemon", "Hebrews", "James", "1 Peter", "2 Peter",
+    "1 John", "2 John", "3 John", "Jude", "Revelation"
+];
+
+const FAMOUS_QUOTE_VERSES = [
+    { book: 'John', chapter: '3', from: '16', to: '16' },
+    { book: 'Psalms', chapter: '23', from: '1', to: '1' },
+    { book: 'Philippians', chapter: '4', from: '13', to: '13' },
+    { book: 'Romans', chapter: '8', from: '28', to: '28' },
+    { book: 'Proverbs', chapter: '3', from: '5', to: '6' },
+    { book: 'Jeremiah', chapter: '29', from: '11', to: '11' },
+    { book: 'Isaiah', chapter: '40', from: '31', to: '31' },
+    { book: 'Genesis', chapter: '1', from: '1', to: '1' },
+    { book: 'Matthew', chapter: '6', from: '33', to: '33' },
+    { book: 'Psalms', chapter: '46', from: '1', to: '1' },
+    { book: 'Joshua', chapter: '1', from: '9', to: '9' },
+    { book: '1 Corinthians', chapter: '13', from: '4', to: '7' },
+    { book: 'Micah', chapter: '6', from: '8', to: '8' },
+    { book: 'Ephesians', chapter: '2', from: '8', to: '9' },
+    { book: 'Hebrews', chapter: '11', from: '1', to: '1' },
+    { book: 'Galatians', chapter: '5', from: '22', to: '23' }
+];
 let isFetching = false, oldestIndex = -1, newestIndex = -1;
 const loaderHTML = `<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4 opacity-80"></div><p class="text-xs font-semibold tracking-wider uppercase text-gray-400">Loading...</p>`;
 
@@ -1520,7 +1543,18 @@ function applyAccentColor(accentObj, skipSave = false) {
 
 function populateBooks(selectElement) { selectElement.innerHTML = ''; Object.keys(BIBLE_BOOKS).forEach(testament => { const optgroup = document.createElement('optgroup'); optgroup.label = testament; Object.keys(BIBLE_BOOKS[testament]).forEach(bookName => { const option = document.createElement('option'); option.value = bookName; option.textContent = bookName; optgroup.appendChild(option); }); selectElement.appendChild(optgroup); }); }
 function populateChapters(bookSelect, chapterSelect) { const book = bookSelect.value; let chapterCount = BIBLE_BOOKS["Old Testament"][book] || BIBLE_BOOKS["New Testament"][book] || 1; chapterSelect.innerHTML = ''; for (let i = 1; i <= chapterCount; i++) { const option = document.createElement('option'); option.value = i; option.textContent = `Chapter ${i}`; chapterSelect.appendChild(option); } }
-function openQuoteModal(defaultBook, defaultChapter, defaultFrom, defaultTo) { populateBooks(quoteBookSelect); quoteBookSelect.value = defaultBook || lastRead.book; populateChapters(quoteBookSelect, quoteChapterSelect); if(defaultChapter) quoteChapterSelect.value = defaultChapter; quoteVerseFromEl.value = defaultFrom || ''; quoteVerseToEl.value = defaultTo || ''; document.getElementById('translation-select-quote').value = document.querySelector('.translation-select').value || 'drb'; quoteModal.classList.remove('hidden'); }
+
+function openQuoteModal(defaultBook, defaultChapter, defaultFrom, defaultTo) { 
+    populateBooks(quoteBookSelect); 
+    quoteBookSelect.value = defaultBook || lastRead.book; 
+    populateChapters(quoteBookSelect, quoteChapterSelect); 
+    if(defaultChapter) quoteChapterSelect.value = defaultChapter; 
+    quoteVerseFromEl.value = defaultFrom || '1'; 
+    quoteVerseToEl.value = defaultTo || defaultFrom || '1'; 
+    document.getElementById('translation-select-quote').value = document.querySelector('.translation-select').value || 'drb'; 
+    quoteModal.classList.remove('hidden'); 
+    updateQuoteLivePreview();
+}
 
 async function searchPexels() {
     const query = document.getElementById('pexels-search-input').value.trim();
@@ -1544,70 +1578,166 @@ async function searchPexels() {
                 img.classList.replace('border-transparent', 'border-primary');
                 selectedPexelsImageUrl = img.dataset.largeSrc;
                 document.getElementById('clear-bg-image-btn').classList.remove('hidden');
+                updateQuoteLivePreview();
             };
             resultsContainer.appendChild(img);
         });
     } catch (err) { resultsContainer.innerHTML = `<div class="text-[10px] text-red-500 py-2">Error connecting to Pexels. Please try again.</div>`; }
 }
 
-async function generateAndDownloadQuote() {
-    const verseFrom = quoteVerseFromEl.value, verseTo = quoteVerseToEl.value || verseFrom; if (!verseFrom) return showToast('Enter start verse.');
-    const generateBtn = document.getElementById('generate-and-download-btn'); quoteLoader.classList.remove('hidden'); generateBtn.disabled = true;
-    const book = quoteBookSelect.value, chapter = quoteChapterSelect.value; const verseRange = verseFrom === verseTo ? verseFrom : `${verseFrom}-${verseTo}`;
-    try {
-        let verseText = '', refText = '', shortVersionName = ''; const translationSelect = document.getElementById('translation-select-quote'); const translation = translationSelect.value; const selectedOption = translationSelect.options[translationSelect.selectedIndex];
-        const baseUrl = selectedOption.dataset.baseUrl;
-        
-        if (baseUrl) {
-            const bookUrl = `${baseUrl}/${encodeURIComponent(book)}.json`;
-            if (!staticBookData[bookUrl]) {
-                const res = await fetch(bookUrl);
-                if(!res.ok) throw new Error("Book not available in this translation.");
-                staticBookData[bookUrl] = await res.json();
-            }
-            const bookData = staticBookData[bookUrl]; 
-            
+async function fetchQuoteVerseText(book, chapter, fromVerse, toVerse, translation) {
+    const translationSelect = document.getElementById('translation-select-quote');
+    const selectedOption = translationSelect ? translationSelect.options[translationSelect.selectedIndex] : null;
+    const baseUrl = selectedOption ? selectedOption.dataset.baseUrl : null;
+    
+    if (baseUrl) {
+        const bookUrl = `${baseUrl}/${encodeURIComponent(book)}.json`;
+        if (!staticBookData[bookUrl]) {
+            const res = await fetch(bookUrl);
+            if (res.ok) staticBookData[bookUrl] = await res.json();
+        }
+        const bookData = staticBookData[bookUrl];
+        if (bookData) {
             let versesToQuote = [];
             if (bookData.chapters && Array.isArray(bookData.chapters)) {
                 const chapObj = bookData.chapters.find(c => c.chapter.toString() === chapter.toString());
-                if (!chapObj || !chapObj.verses) throw new Error("Chapter missing.");
-                for (let i = parseInt(verseFrom); i <= parseInt(verseTo); i++) {
-                    const vObj = chapObj.verses.find(v => v.verse.toString() === i.toString());
-                    if (vObj) versesToQuote.push(vObj.text);
+                if (chapObj && chapObj.verses) {
+                    for (let i = parseInt(fromVerse); i <= parseInt(toVerse); i++) {
+                        const vObj = chapObj.verses.find(v => v.verse.toString() === i.toString());
+                        if (vObj) versesToQuote.push(vObj.text);
+                    }
                 }
-            } else {
-                const chapterData = bookData[chapter]; 
-                if (!chapterData) throw new Error("Chapter missing.");
-                for (let i = parseInt(verseFrom); i <= parseInt(verseTo); i++) {
-                    if (chapterData[i]) versesToQuote.push(chapterData[i]); 
+            } else if (bookData[chapter]) {
+                for (let i = parseInt(fromVerse); i <= parseInt(toVerse); i++) {
+                    if (bookData[chapter][i]) versesToQuote.push(bookData[chapter][i]);
                 }
             }
-            if (versesToQuote.length === 0) throw new Error("Verses missing.");
-            
-            verseText = versesToQuote.join(' '); shortVersionName = selectedOption.dataset.short || selectedOption.dataset.name; refText = `— ${book} ${chapter}:${verseRange} (${shortVersionName})`;
-        } else { 
-            const data = await (await fetch(`https://bible-api.com/${encodeURIComponent(book)}+${chapter}:${verseRange}?translation=${translation}`)).json(); 
-            verseText = data.verses.map(v => v.text.replace(/\n/g, ' ').trim()).join(' '); shortVersionName = selectedOption.dataset.short || selectedOption.dataset.name; refText = `— ${data.reference} (${shortVersionName})`; 
+            if (versesToQuote.length > 0) return versesToQuote.join(' ');
         }
-        await downloadCanvasQuote({ text: verseText, ref: refText, fileName: `${book.replace(/\s+/g, '_')}_${chapter}_${verseRange}.png` }); quoteLoader.classList.add('hidden');
-    } catch (error) { quoteLoader.textContent = error.message; quoteLoader.classList.add('text-red-500'); } finally { generateBtn.disabled = false; }
+    }
+    
+    let onPageVerses = [];
+    for (let i = parseInt(fromVerse); i <= parseInt(toVerse); i++) {
+        const el = document.querySelector(`[data-verse-ref="${book} ${chapter}:${i}"]`);
+        if (el) onPageVerses.push(el.textContent.replace(/^\d+/, '').trim());
+    }
+    if (onPageVerses.length > 0) return onPageVerses.join(' ');
+    
+    const verseRange = fromVerse === toVerse ? fromVerse : `${fromVerse}-${toVerse}`;
+    const data = await (await fetch(`https://bible-api.com/${encodeURIComponent(book)}+${chapter}:${verseRange}?translation=${translation}`)).json();
+    if (data && data.verses) {
+        return data.verses.map(v => v.text.replace(/\n/g, ' ').trim()).join(' ');
+    }
+    return '';
 }
 
-async function downloadCanvasQuote(quoteData) {
-    const { text, ref, fileName } = quoteData; const selectedFont = quoteFontSelect.value; const canvasWidth = 1200, maxCanvasHeight = 1600, minCanvasHeight = 1200, padding = 100, textMaxWidth = canvasWidth - (padding * 2);
-    const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
-    try { await document.fonts.load(`italic 60px "${selectedFont}"`); await document.fonts.load(`40px Inter`); await document.fonts.load(`20px Inter`); } catch (err) {}
-    let verseFontSize = 65, refFontSize = 35, verseLineHeight, verseFont, totalContentHeight, finalLines = [];
-    while (verseFontSize >= 25) {
-        verseLineHeight = verseFontSize * 1.5; verseFont = `italic ${verseFontSize}px "${selectedFont}"`; ctx.font = verseFont;
-        const words = text.split(' '); let line = ''; finalLines = [];
-        for(let n = 0; n < words.length; n++) { const testLine = line + words[n] + ' '; if (ctx.measureText(testLine).width > textMaxWidth && n > 0) { finalLines.push(line); line = words[n] + ' '; } else line = testLine; }
-        finalLines.push(line); totalContentHeight = (finalLines.length * verseLineHeight) + (refFontSize * 1.5) + 80; 
-        if (totalContentHeight + (padding * 2) <= maxCanvasHeight) break; verseFontSize -= 3; refFontSize = Math.max(20, refFontSize - 1.5); 
-    }
-    canvas.width = canvasWidth; canvas.height = Math.max(minCanvasHeight, Math.min(maxCanvasHeight, totalContentHeight + (padding * 2)));
+async function updateQuoteLivePreview() {
+    const previewBox = document.getElementById('quote-live-preview-box');
+    const previewText = document.getElementById('quote-preview-text');
+    const previewRef = document.getElementById('quote-preview-ref');
+    const previewBgImg = document.getElementById('quote-preview-bg-img');
+    if (!previewBox || !previewText || !previewRef) return;
     
-    const bgColor = document.getElementById('quote-bg-color').value;
+    const bgColor = document.getElementById('quote-bg-color').value || '#111111';
+    const textColor = document.getElementById('quote-text-color').value || '#FFFFFF';
+    const fontName = quoteFontSelect.value || 'Crimson Pro';
+    
+    previewBox.style.backgroundColor = bgColor;
+    previewBox.style.color = textColor;
+    previewBox.style.fontFamily = `"${fontName}", serif`;
+    
+    // Adjust container size per ratio
+    if (currentQuoteAspectRatio === '1:1') {
+        previewBox.style.width = '280px';
+        previewBox.style.height = '280px';
+    } else if (currentQuoteAspectRatio === '9:16') {
+        previewBox.style.width = '200px';
+        previewBox.style.height = '355px';
+    } else if (currentQuoteAspectRatio === '16:9') {
+        previewBox.style.width = '350px';
+        previewBox.style.height = '197px';
+    }
+    
+    if (selectedPexelsImageUrl) {
+        previewBgImg.style.backgroundImage = `url('${selectedPexelsImageUrl}')`;
+        previewBgImg.classList.remove('hidden');
+    } else {
+        previewBgImg.classList.add('hidden');
+    }
+    
+    const book = quoteBookSelect.value || 'John';
+    const chapter = quoteChapterSelect.value || '1';
+    const fromVerse = quoteVerseFromEl.value || '1';
+    const toVerse = quoteVerseToEl.value || fromVerse;
+    const verseRange = fromVerse === toVerse ? fromVerse : `${fromVerse}–${toVerse}`;
+    
+    const translationSelect = document.getElementById('translation-select-quote');
+    const shortVersion = translationSelect && translationSelect.selectedOptions && translationSelect.selectedOptions[0] ? (translationSelect.selectedOptions[0].dataset.short || translationSelect.selectedOptions[0].dataset.name) : 'DRB';
+    
+    previewRef.textContent = `— ${book} ${chapter}:${verseRange} (${shortVersion})`;
+    
+    try {
+        const text = await fetchQuoteVerseText(book, chapter, fromVerse, toVerse, translationSelect ? translationSelect.value : 'drb');
+        if (text) {
+            previewText.textContent = `“${text}”`;
+        }
+    } catch (e) {}
+}
+
+async function createQuoteCanvas(quoteData) {
+    const { text, ref } = quoteData;
+    const selectedFont = quoteFontSelect.value || 'Crimson Pro';
+    
+    let canvasWidth = 1200, canvasHeight = 1200;
+    if (currentQuoteAspectRatio === '9:16') {
+        canvasWidth = 1080;
+        canvasHeight = 1920;
+    } else if (currentQuoteAspectRatio === '16:9') {
+        canvasWidth = 1920;
+        canvasHeight = 1080;
+    }
+    
+    const padding = currentQuoteAspectRatio === '9:16' ? 120 : 100;
+    const textMaxWidth = canvasWidth - (padding * 2);
+    const canvas = document.createElement('canvas');
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
+    const ctx = canvas.getContext('2d');
+    
+    try {
+        await document.fonts.load(`italic 60px "${selectedFont}"`);
+        await document.fonts.load(`40px Inter`);
+        await document.fonts.load(`20px Inter`);
+    } catch (err) {}
+    
+    let verseFontSize = currentQuoteAspectRatio === '9:16' ? 68 : 62;
+    let refFontSize = 32;
+    let verseLineHeight, verseFont, totalContentHeight, finalLines = [];
+    
+    while (verseFontSize >= 24) {
+        verseLineHeight = verseFontSize * 1.5;
+        verseFont = `italic ${verseFontSize}px "${selectedFont}"`;
+        ctx.font = verseFont;
+        const words = text.split(' ');
+        let line = '';
+        finalLines = [];
+        for (let n = 0; n < words.length; n++) {
+            const testLine = line + words[n] + ' ';
+            if (ctx.measureText(testLine).width > textMaxWidth && n > 0) {
+                finalLines.push(line);
+                line = words[n] + ' ';
+            } else {
+                line = testLine;
+            }
+        }
+        finalLines.push(line);
+        totalContentHeight = (finalLines.length * verseLineHeight) + (refFontSize * 1.6) + 100;
+        if (totalContentHeight + (padding * 2) <= canvasHeight) break;
+        verseFontSize -= 3;
+        refFontSize = Math.max(20, refFontSize - 1.5);
+    }
+    
+    const bgColor = document.getElementById('quote-bg-color').value || '#111111';
     
     if (selectedPexelsImageUrl) {
         const img = new Image();
@@ -1621,29 +1751,130 @@ async function downloadCanvasQuote(quoteData) {
         const hRatio = canvas.width / img.width;
         const vRatio = canvas.height / img.height;
         const ratio  = Math.max(hRatio, vRatio);
-        const centerShift_x = (canvas.width - img.width*ratio) / 2;
-        const centerShift_y = (canvas.height - img.height*ratio) / 2;
+        const centerShift_x = (canvas.width - img.width * ratio) / 2;
+        const centerShift_y = (canvas.height - img.height * ratio) / 2;
         
-        ctx.drawImage(img, 0, 0, img.width, img.height, centerShift_x, centerShift_y, img.width*ratio, img.height*ratio);
+        ctx.drawImage(img, 0, 0, img.width, img.height, centerShift_x, centerShift_y, img.width * ratio, img.height * ratio);
         
         const hex = bgColor.replace('#', '');
-        const r = parseInt(hex.substring(0,2), 16) || 0;
-        const g = parseInt(hex.substring(2,4), 16) || 0;
-        const b = parseInt(hex.substring(4,6), 16) || 0;
-        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.65)`;
+        const r = parseInt(hex.substring(0, 2), 16) || 0;
+        const g = parseInt(hex.substring(2, 4), 16) || 0;
+        const b = parseInt(hex.substring(4, 6), 16) || 0;
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.72)`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     } else {
         ctx.fillStyle = bgColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
+    
+    const hex = bgColor.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16) || 0;
+    const g = parseInt(hex.substring(2, 4), 16) || 0;
+    const b = parseInt(hex.substring(4, 6), 16) || 0;
+    const isDarkBg = (0.2126 * r + 0.7152 * g + 0.0722 * b) < 128;
+    const refColor = isDarkBg ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.65)';
+    
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    let startY = (canvas.height - totalContentHeight) / 2;
+    
+    ctx.font = `60px "${selectedFont}", serif`;
+    ctx.fillStyle = isDarkBg ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)';
+    ctx.fillText('“', canvas.width / 2, Math.max(40, startY - 50));
+    
+    ctx.font = verseFont;
+    ctx.fillStyle = document.getElementById('quote-text-color').value || (isDarkBg ? '#FFFFFF' : '#111111');
+    for (let i = 0; i < finalLines.length; i++) {
+        ctx.fillText(finalLines[i].trim(), canvas.width / 2, startY);
+        startY += verseLineHeight;
+    }
+    
+    startY += 25;
+    ctx.strokeStyle = isDarkBg ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.2)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(canvas.width / 2 - 40, startY);
+    ctx.lineTo(canvas.width / 2 + 40, startY);
+    ctx.stroke();
+    
+    startY += 25;
+    ctx.font = `600 ${refFontSize}px Inter`;
+    ctx.fillStyle = refColor;
+    ctx.fillText(ref, canvas.width / 2, startY);
+    
+    ctx.font = '500 18px Inter';
+    ctx.fillStyle = isDarkBg ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.4)';
+    ctx.fillText('bibliasacra.web.app', canvas.width / 2, canvas.height - 45);
+    
+    return canvas;
+}
 
-    const hex = bgColor.replace('#', ''); const r = parseInt(hex.substring(0,2), 16)||0, g = parseInt(hex.substring(2,4), 16)||0, b = parseInt(hex.substring(4,6), 16)||0;
-    const refColor = (0.2126 * r + 0.7152 * g + 0.0722 * b) < 128 ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)'; 
-    ctx.textAlign = 'center'; ctx.textBaseline = 'top'; let startY = (canvas.height - totalContentHeight) / 2; ctx.font = verseFont; ctx.fillStyle = document.getElementById('quote-text-color').value;
-    for(let i = 0; i < finalLines.length; i++) { ctx.fillText(finalLines[i].trim(), canvas.width / 2, startY); startY += verseLineHeight; }
-    startY += 60; ctx.font = `500 ${refFontSize}px Inter`; ctx.fillStyle = refColor; ctx.fillText(ref, canvas.width / 2, startY);
-    ctx.font = '500 20px Inter'; ctx.fillText('bibliasacra.web.app', canvas.width / 2, canvas.height - 40);
-    const link = document.createElement('a'); link.download = fileName; link.href = canvas.toDataURL('image/png'); link.click();
+async function generateAndDownloadQuote() {
+    const verseFrom = quoteVerseFromEl.value, verseTo = quoteVerseToEl.value || verseFrom; 
+    if (!verseFrom) return showToast('Enter start verse.');
+    const generateBtn = document.getElementById('generate-and-download-btn'); 
+    quoteLoader.classList.remove('hidden'); 
+    generateBtn.disabled = true;
+    const book = quoteBookSelect.value, chapter = quoteChapterSelect.value; 
+    const verseRange = verseFrom === verseTo ? verseFrom : `${verseFrom}–${verseTo}`;
+    
+    try {
+        const translationSelect = document.getElementById('translation-select-quote');
+        const shortVersion = translationSelect && translationSelect.selectedOptions && translationSelect.selectedOptions[0] ? (translationSelect.selectedOptions[0].dataset.short || translationSelect.selectedOptions[0].dataset.name) : 'DRB';
+        const verseText = await fetchQuoteVerseText(book, chapter, verseFrom, verseTo, translationSelect ? translationSelect.value : 'drb');
+        if (!verseText) throw new Error("Verse text could not be loaded.");
+        const refText = `— ${book} ${chapter}:${verseRange} (${shortVersion})`;
+        
+        const canvas = await createQuoteCanvas({ text: verseText, ref: refText });
+        const fileName = `${book.replace(/\s+/g, '_')}_${chapter}_${verseRange}.png`;
+        const link = document.createElement('a'); 
+        link.download = fileName; 
+        link.href = canvas.toDataURL('image/png'); 
+        link.click();
+        quoteLoader.classList.add('hidden');
+        showToast('Quote image downloaded!');
+    } catch (error) { 
+        quoteLoader.textContent = error.message; 
+        quoteLoader.classList.add('text-red-500'); 
+    } finally { 
+        generateBtn.disabled = false; 
+    }
+}
+
+async function copyQuoteToClipboard() {
+    const verseFrom = quoteVerseFromEl.value, verseTo = quoteVerseToEl.value || verseFrom;
+    if (!verseFrom) return showToast('Enter start verse.');
+    const book = quoteBookSelect.value, chapter = quoteChapterSelect.value;
+    const verseRange = verseFrom === verseTo ? verseFrom : `${verseFrom}–${verseTo}`;
+    const copyBtn = document.getElementById('copy-quote-clipboard-btn');
+    if (copyBtn) copyBtn.disabled = true;
+    showToast('Generating quote image...');
+    
+    try {
+        const translationSelect = document.getElementById('translation-select-quote');
+        const shortVersion = translationSelect && translationSelect.selectedOptions && translationSelect.selectedOptions[0] ? (translationSelect.selectedOptions[0].dataset.short || translationSelect.selectedOptions[0].dataset.name) : 'DRB';
+        const verseText = await fetchQuoteVerseText(book, chapter, verseFrom, verseTo, translationSelect ? translationSelect.value : 'drb');
+        if (!verseText) throw new Error("Could not load verse text.");
+        const refText = `— ${book} ${chapter}:${verseRange} (${shortVersion})`;
+        
+        const canvas = await createQuoteCanvas({ text: verseText, ref: refText });
+        canvas.toBlob(async (blob) => {
+            if (blob && navigator.clipboard && navigator.clipboard.write) {
+                try {
+                    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                    showToast('Quote image copied to clipboard!');
+                    return;
+                } catch (e) {}
+            }
+            navigator.clipboard.writeText(`"${verseText}" ${refText}`).then(() => {
+                showToast('Quote text copied to clipboard!');
+            });
+        }, 'image/png');
+    } catch (err) {
+        showToast('Error generating quote image.');
+    } finally {
+        if (copyBtn) copyBtn.disabled = false;
+    }
 }
 
 function getVerseRangeText() {
@@ -1769,6 +2000,198 @@ async function loadAndScrollToHighlight(ref) {
     await loadChapter(parts[1], parts[2], 'clear', parts[3]);
 }
 
+function exportNotesAsMarkdown() {
+    const active = Object.keys(highlights).filter(r => !highlights[r].deleted);
+    if (active.length === 0) return showToast('No highlights or notes to export.');
+    
+    let md = `# Biblia Sacra — Notes & Highlights\n`;
+    md += `*Exported on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}*\n`;
+    md += `*Total items: ${active.length}*\n\n---\n\n`;
+    
+    const sorted = [...active].sort((a, b) => (highlights[b].updatedAt || 0) - (highlights[a].updatedAt || 0));
+    sorted.forEach(ref => {
+        const h = highlights[ref];
+        const dateStr = h.updatedAt ? new Date(h.updatedAt).toLocaleDateString() : 'N/A';
+        md += `## ${ref}\n`;
+        md += `- **Color Tag**: ${h.color || 'yellow'}\n`;
+        md += `- **Category**: ${h.category || 'General'}\n`;
+        md += `- **Saved**: ${dateStr}\n\n`;
+        if (h.verseText) {
+            md += `> "${h.verseText}"\n\n`;
+        }
+        if (h.note && h.note.trim()) {
+            md += `### Reflection / Note\n${h.note}\n\n`;
+        }
+        md += `---\n\n`;
+    });
+    
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `biblia_sacra_notes_${new Date().toISOString().slice(0,10)}.md`;
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast('Notes exported as Markdown file!');
+}
+
+function copyAllNotesToClipboard() {
+    const active = Object.keys(highlights).filter(r => !highlights[r].deleted);
+    if (active.length === 0) return showToast('No notes or highlights to copy.');
+    
+    let text = `# Biblia Sacra Notes & Highlights\n\n`;
+    active.forEach(ref => {
+        const h = highlights[ref];
+        text += `• ${ref} [${h.category || 'General'}]: "${h.verseText || ''}"\n`;
+        if (h.note && h.note.trim()) {
+            text += `  Reflection: ${h.note.trim()}\n`;
+        }
+        text += `\n`;
+    });
+    
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('All notes copied to clipboard!');
+    }).catch(() => {
+        showToast('Failed to copy to clipboard.');
+    });
+}
+
+function renderBookmarks() {
+    const bmContent = document.getElementById('bookmarks-content');
+    if (!bmContent) return;
+    bmContent.innerHTML = '';
+    
+    const activeBookmarks = Object.keys(bookmarks).filter(b => !bookmarks[b].deleted);
+    const badge = document.getElementById('bookmarks-count-badge');
+    if (badge) badge.textContent = activeBookmarks.length;
+    
+    const filterTerm = currentBookmarksSearch.toLowerCase().trim();
+    const filtered = activeBookmarks.filter(ref => {
+        if (!filterTerm) return true;
+        return ref.toLowerCase().includes(filterTerm);
+    });
+    
+    if (filtered.length === 0) {
+        if (activeBookmarks.length === 0) {
+            bmContent.innerHTML = `
+                <div class="text-center py-8 px-4">
+                    <div class="w-12 h-12 rounded-full bg-primary/10 text-primary mx-auto flex items-center justify-center mb-3">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M17.5 3.5h-11a2 2 0 00-2 2v15l6.5-3 6.5 3v-15a2 2 0 00-2-2z"/></svg>
+                    </div>
+                    <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">No bookmarks saved yet</p>
+                    <p class="text-xs text-gray-400 mt-1 mb-4">Save chapters or verses for quick one-tap access.</p>
+                    <button type="button" id="empty-state-add-bm-btn" class="btn-primary text-xs font-semibold px-3 py-2 rounded-lg inline-flex items-center gap-1.5 shadow-sm">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        <span>Bookmark Current (${lastRead.book} ${lastRead.chapter})</span>
+                    </button>
+                </div>
+            `;
+            const emptyBtn = document.getElementById('empty-state-add-bm-btn');
+            if (emptyBtn) emptyBtn.addEventListener('click', () => addCurrentChapterBookmark());
+        } else {
+            bmContent.innerHTML = `<p class="text-gray-400 text-xs text-center py-6">No bookmarks match "${currentBookmarksSearch}".</p>`;
+        }
+        return;
+    }
+    
+    filtered.sort((a, b) => (bookmarks[b].updatedAt || 0) - (bookmarks[a].updatedAt || 0));
+    
+    filtered.forEach(ref => {
+        const bm = bookmarks[ref];
+        const dateStr = bm.updatedAt ? new Date(bm.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '';
+        const parts = ref.match(/(.*?)\s+(\d+)(?::(\d+))?/);
+        const bookName = parts ? parts[1] : ref;
+        const isNT = BIBLE_BOOKS["New Testament"] && BIBLE_BOOKS["New Testament"][bookName];
+        const testamentLabel = isNT ? 'NT' : 'OT';
+        
+        const card = document.createElement('div');
+        card.className = 'glass-input p-3 rounded-xl flex items-center justify-between gap-3 group hover:border-primary/40 transition-all';
+        card.innerHTML = `
+            <div class="flex items-center gap-3 cursor-pointer flex-1 min-w-0 load-bm-trigger">
+                <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.5 3.5h-11a2 2 0 00-2 2v15l6.5-3 6.5 3v-15a2 2 0 00-2-2z"/></svg>
+                </div>
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-sm text-gray-900 dark:text-gray-100 truncate">${ref}</span>
+                        <span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-gray-100 dark:bg-white/10 text-gray-500 shrink-0">${testamentLabel}</span>
+                    </div>
+                    ${dateStr ? `<span class="text-[10px] text-gray-400">Saved ${dateStr}</span>` : ''}
+                </div>
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+                <button type="button" class="copy-bm-btn p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-white/10 transition-colors" title="Copy Reference">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                </button>
+                <button type="button" class="delete-bm-btn p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors" title="Delete Bookmark">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+                <button type="button" class="load-bm-trigger p-1.5 rounded-lg text-primary hover:bg-primary/10 transition-colors ml-0.5" title="Read Chapter">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </button>
+            </div>
+        `;
+        
+        card.querySelectorAll('.load-bm-trigger').forEach(el => {
+            el.onclick = () => {
+                loadAndScrollToHighlight(ref);
+                document.getElementById('bookmarks-modal').classList.add('hidden');
+                toggleMobileSidebar(false);
+            };
+        });
+        
+        card.querySelector('.copy-bm-btn').onclick = (e) => {
+            e.stopPropagation();
+            navigator.clipboard.writeText(ref).then(() => showToast(`Copied ${ref}`));
+        };
+        
+        card.querySelector('.delete-bm-btn').onclick = (e) => {
+            e.stopPropagation();
+            deleteBookmark(ref);
+        };
+        
+        bmContent.appendChild(card);
+    });
+}
+
+function deleteBookmark(ref) {
+    if (!bookmarks[ref]) return;
+    bookmarks[ref] = { deleted: true, updatedAt: Date.now() };
+    pushToCloud({ [`bookmarks.${ref}`]: bookmarks[ref] });
+    saveToLocalDB();
+    renderBookmarks();
+    showToast(`Bookmark for ${ref} removed`);
+    
+    const { reference } = getVerseRangeText();
+    if (reference === ref) {
+        const bmBtnText = document.getElementById('bookmark-btn-text');
+        if (bmBtnText) bmBtnText.textContent = 'Bookmark';
+    }
+}
+
+function addCurrentChapterBookmark() {
+    const ref = `${lastRead.book} ${lastRead.chapter}`;
+    if (bookmarks[ref] && !bookmarks[ref].deleted) {
+        showToast(`${ref} is already bookmarked`);
+        return;
+    }
+    bookmarks[ref] = { updatedAt: Date.now() };
+    pushToCloud({ [`bookmarks.${ref}`]: bookmarks[ref] });
+    saveToLocalDB();
+    renderBookmarks();
+    showToast(`Bookmarked ${ref}!`);
+}
+
+function copyAllBookmarks() {
+    const active = Object.keys(bookmarks).filter(b => !bookmarks[b].deleted);
+    if (active.length === 0) return showToast('No bookmarks to copy.');
+    active.sort((a, b) => (bookmarks[b].updatedAt || 0) - (bookmarks[a].updatedAt || 0));
+    const text = active.map(r => `• ${r}`).join('\n');
+    navigator.clipboard.writeText(`Biblia Sacra Saved Bookmarks:\n\n${text}`).then(() => {
+        showToast('All bookmarks copied to clipboard!');
+    });
+}
+
 function renderHighlights() {
     const allTags = new Set(); 
     Object.values(highlights).forEach(h => { if (!h.deleted && h.category) allTags.add(h.category); });
@@ -1779,30 +2202,83 @@ function renderHighlights() {
     tagsContainer.querySelectorAll('.tag-btn').forEach(btn => btn.addEventListener('click', (e) => { currentHighlightsCategory = e.target.dataset.category === 'all' ? null : e.target.dataset.category; renderHighlights(); }));
 
     const activeHighlights = Object.keys(highlights).filter(r => !highlights[r].deleted);
+    const badge = document.getElementById('highlights-count-badge');
+    const notesCount = activeHighlights.filter(r => highlights[r].note && highlights[r].note.trim()).length;
+    if (badge) badge.textContent = `${activeHighlights.length} (${notesCount} notes)`;
 
-    if (activeHighlights.length === 0) { highlightsContent.innerHTML = `<p class="text-gray-400 text-sm text-center py-10">No highlights found.</p>`; return; }
-    const groupedByBook = {}; const searchTerm = currentHighlightsSearch.toLowerCase();
-    
-    for (const ref of activeHighlights) {
-        const highlight = highlights[ref]; 
-        if (currentHighlightsCategory && highlight.category !== currentHighlightsCategory) continue;
-        const textToSearch = `${ref} ${highlight.note || ''} ${highlight.verseText || ''} ${highlight.category || ''}`.toLowerCase();
-        if (searchTerm && !textToSearch.includes(searchTerm)) continue;
-        const book = ref.substring(0, ref.lastIndexOf(' ')); if (!groupedByBook[book]) groupedByBook[book] = []; groupedByBook[book].push(ref);
+    if (activeHighlights.length === 0) { 
+        highlightsContent.innerHTML = `<p class="text-gray-400 text-sm text-center py-10">No highlights found.</p>`; 
+        return; 
     }
+
+    const searchTerm = currentHighlightsSearch.toLowerCase().trim();
     
-    if (Object.keys(groupedByBook).length === 0) { highlightsContent.innerHTML = `<p class="text-gray-400 text-sm text-center py-10">No results match.</p>`; return; }
+    // Filter active items
+    let filteredRefs = activeHighlights.filter(ref => {
+        const highlight = highlights[ref];
+        if (currentHighlightsCategory && highlight.category !== currentHighlightsCategory) return false;
+        if (currentHighlightsNotesOnly && (!highlight.note || !highlight.note.trim())) return false;
+        if (searchTerm) {
+            const textToSearch = `${ref} ${highlight.note || ''} ${highlight.verseText || ''} ${highlight.category || ''}`.toLowerCase();
+            if (!textToSearch.includes(searchTerm)) return false;
+        }
+        return true;
+    });
+
+    if (filteredRefs.length === 0) { 
+        highlightsContent.innerHTML = `<p class="text-gray-400 text-sm text-center py-10">No items match your filter.</p>`; 
+        return; 
+    }
+
+    // Sort items
+    if (currentHighlightsSort === 'newest') {
+        filteredRefs.sort((a, b) => (highlights[b].updatedAt || 0) - (highlights[a].updatedAt || 0));
+    } else if (currentHighlightsSort === 'oldest') {
+        filteredRefs.sort((a, b) => (highlights[a].updatedAt || 0) - (highlights[b].updatedAt || 0));
+    } else if (currentHighlightsSort === 'scripture') {
+        filteredRefs.sort((a, b) => {
+            const aBook = a.substring(0, a.lastIndexOf(' '));
+            const bBook = b.substring(0, b.lastIndexOf(' '));
+            const aIdx = CANONICAL_BOOK_ORDER.indexOf(aBook);
+            const bIdx = CANONICAL_BOOK_ORDER.indexOf(bBook);
+            if (aIdx !== bIdx) return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
+            const aParts = a.match(/:(\d+)/), bParts = b.match(/:(\d+)/);
+            return (aParts ? parseInt(aParts[1]) : 0) - (bParts ? parseInt(bParts[1]) : 0);
+        });
+    }
+
+    // Group by book
+    const groupedByBook = {};
+    for (const ref of filteredRefs) {
+        const book = ref.substring(0, ref.lastIndexOf(' '));
+        if (!groupedByBook[book]) groupedByBook[book] = [];
+        groupedByBook[book].push(ref);
+    }
 
     let html = '';
     for (const book in groupedByBook) {
         html += `<h3 class="text-sm font-bold uppercase tracking-[0.2em] text-gray-400 mt-6 mb-3 ml-1">${book}</h3>`;
-        groupedByBook[book].sort((a, b) => { const aParts = a.match(/:(\d+)/), bParts = b.match(/:(\d+)/); return (aParts ? parseInt(aParts[1]) : 0) - (bParts ? parseInt(bParts[1]) : 0); }).forEach(ref => {
-            const highlight = highlights[ref]; const storedVerseText = highlight.verseText || 'Read chapter to view.'; const catHtml = highlight.category ? `<span class="bg-gray-100 dark:bg-white/5 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded text-gray-500">${highlight.category}</span>` : '';
+        groupedByBook[book].forEach(ref => {
+            const highlight = highlights[ref]; 
+            const storedVerseText = highlight.verseText || 'Read chapter to view.'; 
+            const catHtml = highlight.category ? `<span class="bg-gray-100 dark:bg-white/5 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded text-gray-500">${highlight.category}</span>` : '';
+            const dateFormatted = highlight.updatedAt ? new Date(highlight.updatedAt).toLocaleDateString() : '';
             html += `
-                <div class="mb-4 p-4 border-l-2 border-${highlight.color}-400 glass-input rounded-r-xl highlight-card" data-ref="${ref}">
+                <div class="mb-4 p-4 border-l-2 border-${highlight.color}-400 glass-input rounded-r-xl highlight-card group relative" data-ref="${ref}">
                     <div class="flex justify-between items-center mb-1">
-                        <p class="text-xs font-bold text-gray-900 dark:text-gray-100 cursor-pointer hover:text-primary transition-colors load-highlight-ref">${ref}</p>
-                        ${catHtml}
+                        <div class="flex items-center gap-2">
+                            <p class="text-xs font-bold text-gray-900 dark:text-gray-100 cursor-pointer hover:text-primary transition-colors load-highlight-ref">${ref}</p>
+                            ${catHtml}
+                        </div>
+                        <div class="flex items-center gap-1">
+                            ${dateFormatted ? `<span class="text-[9px] text-gray-400 mr-1 hidden sm:inline">${dateFormatted}</span>` : ''}
+                            <button type="button" class="copy-highlight-card-btn p-1 text-gray-400 hover:text-primary rounded transition-colors" data-ref="${ref}" title="Copy verse & note">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                            </button>
+                            <button type="button" class="delete-highlight-card-btn p-1 text-gray-400 hover:text-red-500 rounded transition-colors" data-ref="${ref}" title="Delete highlight & note">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                        </div>
                     </div>
                     <p class="text-sm text-gray-600 dark:text-gray-400 mb-3 cursor-pointer load-highlight-ref line-clamp-2">${storedVerseText}</p>
                     
@@ -1817,14 +2293,21 @@ function renderHighlights() {
                         </div>
                         
                         <button class="add-note-btn ${highlight.note ? 'hidden' : 'flex'} items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors" data-ref="${ref}">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Add Note
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Add Personal Reflection / Note
                         </button>
 
                         <div class="note-edit-mode hidden flex-col gap-2">
-                            <textarea class="note-textarea glass-input w-full p-3 rounded-lg text-sm outline-none resize-y min-h-[80px]" data-ref="${ref}" placeholder="Write your note here (Markdown supported)...">${highlight.note || ''}</textarea>
+                            <!-- Quick Markdown Format Bar -->
+                            <div class="flex items-center gap-1 pb-1">
+                                <button type="button" class="md-format-btn px-2 py-0.5 rounded text-[10px] font-bold bg-gray-200 dark:bg-white/10 hover:bg-primary hover:text-white transition-colors" data-prefix="**" data-suffix="**" title="Bold">B</button>
+                                <button type="button" class="md-format-btn px-2 py-0.5 rounded text-[10px] italic font-serif bg-gray-200 dark:bg-white/10 hover:bg-primary hover:text-white transition-colors" data-prefix="*" data-suffix="*" title="Italic">I</button>
+                                <button type="button" class="md-format-btn px-2 py-0.5 rounded text-[10px] bg-gray-200 dark:bg-white/10 hover:bg-primary hover:text-white transition-colors" data-prefix="> " data-suffix="" title="Quote Block">&gt; Quote</button>
+                                <button type="button" class="md-format-btn px-2 py-0.5 rounded text-[10px] bg-gray-200 dark:bg-white/10 hover:bg-primary hover:text-white transition-colors" data-prefix="- " data-suffix="" title="Bullet List">• List</button>
+                            </div>
+                            <textarea class="note-textarea glass-input w-full p-3 rounded-lg text-sm outline-none resize-y min-h-[80px]" data-ref="${ref}" placeholder="Write your reflection here (Markdown supported)...">${highlight.note || ''}</textarea>
                             <div class="flex gap-2 justify-end">
                                 <button class="cancel-note-btn px-3 py-1.5 rounded-md text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors" data-ref="${ref}">Cancel</button>
-                                <button class="save-note-btn px-3 py-1.5 rounded-md text-xs font-semibold bg-primary text-white hover:bg-primary-hover transition-colors shadow-sm" data-ref="${ref}">Save</button>
+                                <button class="save-note-btn px-3 py-1.5 rounded-md text-xs font-semibold bg-primary text-white hover:bg-primary-hover transition-colors shadow-sm" data-ref="${ref}">Save Note</button>
                             </div>
                         </div>
                     </div>
@@ -2010,23 +2493,154 @@ window.onload = async () => {
         });
     });
 
-    document.querySelectorAll('.open-highlights-modal-btn-sidebar').forEach(btn => btn.addEventListener('click', () => { currentHighlightsCategory = null; currentHighlightsSearch = ''; document.getElementById('highlights-search').value = ''; renderHighlights(); highlightsModal.classList.remove('hidden'); }));
-    document.getElementById('open-highlights-mobile-btn').addEventListener('click', () => { renderHighlights(); highlightsModal.classList.remove('hidden'); }); closeHighlightsModalBtn.addEventListener('click', () => highlightsModal.classList.add('hidden'));
+    // Highlights & Notes Modal Wiring
+    document.querySelectorAll('.open-highlights-modal-btn-sidebar').forEach(btn => btn.addEventListener('click', () => { 
+        currentHighlightsCategory = null; 
+        currentHighlightsSearch = ''; 
+        const searchInput = document.getElementById('highlights-search');
+        if (searchInput) searchInput.value = ''; 
+        renderHighlights(); 
+        highlightsModal.classList.remove('hidden'); 
+    }));
+    document.getElementById('open-highlights-mobile-btn').addEventListener('click', () => { 
+        renderHighlights(); 
+        highlightsModal.classList.remove('hidden'); 
+    }); 
+    closeHighlightsModalBtn.addEventListener('click', () => highlightsModal.classList.add('hidden'));
 
+    const filterNotesOnlyBtn = document.getElementById('filter-notes-only-btn');
+    if (filterNotesOnlyBtn) {
+        filterNotesOnlyBtn.addEventListener('click', () => {
+            currentHighlightsNotesOnly = !currentHighlightsNotesOnly;
+            filterNotesOnlyBtn.classList.toggle('btn-primary', currentHighlightsNotesOnly);
+            filterNotesOnlyBtn.classList.toggle('btn-secondary', !currentHighlightsNotesOnly);
+            filterNotesOnlyBtn.classList.toggle('text-white', currentHighlightsNotesOnly);
+            filterNotesOnlyBtn.classList.toggle('shadow-xs', currentHighlightsNotesOnly);
+            renderHighlights();
+        });
+    }
+
+    const highlightsSortSelect = document.getElementById('highlights-sort-select');
+    if (highlightsSortSelect) {
+        highlightsSortSelect.addEventListener('change', (e) => {
+            currentHighlightsSort = e.target.value;
+            renderHighlights();
+        });
+    }
+
+    const exportNotesBtn = document.getElementById('export-notes-md-btn');
+    if (exportNotesBtn) exportNotesBtn.addEventListener('click', exportNotesAsMarkdown);
+    const copyAllNotesBtn = document.getElementById('copy-all-notes-btn');
+    if (copyAllNotesBtn) copyAllNotesBtn.addEventListener('click', copyAllNotesToClipboard);
+
+    // Bookmarks Modal Wiring
     const bookmarksModal = document.getElementById('bookmarks-modal');
     document.querySelectorAll('.open-bookmarks-modal-btn').forEach(btn => btn.addEventListener('click', () => {
-        const bmContent = document.getElementById('bookmarks-content'); bmContent.innerHTML = '';
-        const activeBookmarks = Object.keys(bookmarks).filter(b => !bookmarks[b].deleted);
-        
-        if (activeBookmarks.length === 0) bmContent.innerHTML = '<p class="text-gray-400 text-sm text-center py-6">No bookmarks yet.</p>';
-        else activeBookmarks.forEach(ref => {
-            const b = document.createElement('div'); b.className = 'glass-input p-3 rounded-lg flex justify-between items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors';
-            b.innerHTML = `<span class="font-semibold text-sm text-gray-800 dark:text-gray-200">${ref}</span><svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>`;
-            b.onclick = () => { loadAndScrollToHighlight(ref); bookmarksModal.classList.add('hidden'); toggleMobileSidebar(false); }; bmContent.appendChild(b);
-        }); bookmarksModal.classList.remove('hidden');
-    })); document.getElementById('close-bookmarks-modal-btn').addEventListener('click', () => bookmarksModal.classList.add('hidden'));
+        currentBookmarksSearch = '';
+        const searchInput = document.getElementById('bookmarks-search-input');
+        if (searchInput) searchInput.value = '';
+        renderBookmarks();
+        bookmarksModal.classList.remove('hidden');
+    })); 
+    document.getElementById('close-bookmarks-modal-btn').addEventListener('click', () => bookmarksModal.classList.add('hidden'));
 
-    document.querySelectorAll('.open-quote-modal-btn').forEach(btn => btn.addEventListener('click', () => openQuoteModal())); closeQuoteModalBtn.addEventListener('click', () => quoteModal.classList.add('hidden')); generateAndDownloadBtn.addEventListener('click', generateAndDownloadQuote); quoteBookSelect.addEventListener('change', () => populateChapters(quoteBookSelect, quoteChapterSelect));
+    const addBmBtn = document.getElementById('add-current-bookmark-btn');
+    if (addBmBtn) addBmBtn.addEventListener('click', addCurrentChapterBookmark);
+
+    const bmSearchInput = document.getElementById('bookmarks-search-input');
+    if (bmSearchInput) {
+        bmSearchInput.addEventListener('input', (e) => {
+            currentBookmarksSearch = e.target.value;
+            renderBookmarks();
+        });
+    }
+
+    const copyBmBtn = document.getElementById('copy-bookmarks-btn');
+    if (copyBmBtn) copyBmBtn.addEventListener('click', copyAllBookmarks);
+
+    // Quote Studio Modal Wiring
+    document.querySelectorAll('.open-quote-modal-btn').forEach(btn => btn.addEventListener('click', () => openQuoteModal())); 
+    closeQuoteModalBtn.addEventListener('click', () => quoteModal.classList.add('hidden')); 
+    generateAndDownloadBtn.addEventListener('click', generateAndDownloadQuote); 
+    
+    const copyQuoteBtn = document.getElementById('copy-quote-clipboard-btn');
+    if (copyQuoteBtn) copyQuoteBtn.addEventListener('click', copyQuoteToClipboard);
+
+    quoteBookSelect.addEventListener('change', () => {
+        populateChapters(quoteBookSelect, quoteChapterSelect);
+        updateQuoteLivePreview();
+    });
+    quoteChapterSelect.addEventListener('change', updateQuoteLivePreview);
+    quoteVerseFromEl.addEventListener('input', updateQuoteLivePreview);
+    quoteVerseToEl.addEventListener('input', updateQuoteLivePreview);
+    document.getElementById('translation-select-quote').addEventListener('change', updateQuoteLivePreview);
+    quoteFontSelect.addEventListener('change', updateQuoteLivePreview);
+    document.getElementById('quote-bg-color').addEventListener('input', updateQuoteLivePreview);
+    document.getElementById('quote-text-color').addEventListener('input', updateQuoteLivePreview);
+
+    // Aspect Ratio Buttons
+    document.querySelectorAll('.quote-ratio-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            currentQuoteAspectRatio = e.currentTarget.dataset.ratio || '1:1';
+            document.querySelectorAll('.quote-ratio-btn').forEach(b => {
+                const isActive = b.dataset.ratio === currentQuoteAspectRatio;
+                b.classList.toggle('active', isActive);
+                b.classList.toggle('bg-white', isActive);
+                b.classList.toggle('dark:bg-white/10', isActive);
+                b.classList.toggle('text-primary', isActive);
+                b.classList.toggle('shadow-xs', isActive);
+                b.classList.toggle('text-gray-500', !isActive);
+                b.classList.toggle('dark:text-gray-400', !isActive);
+            });
+            updateQuoteLivePreview();
+        });
+    });
+
+    // Palette Presets Chips
+    document.querySelectorAll('.quote-palette-chip').forEach(chip => {
+        chip.addEventListener('click', (e) => {
+            const bg = e.currentTarget.dataset.bg;
+            const text = e.currentTarget.dataset.text;
+            const font = e.currentTarget.dataset.font;
+            if (bg) document.getElementById('quote-bg-color').value = bg;
+            if (text) document.getElementById('quote-text-color').value = text;
+            if (font) quoteFontSelect.value = font;
+            updateQuoteLivePreview();
+            showToast(`Applied preset: ${e.currentTarget.textContent.trim()}`);
+        });
+    });
+
+    // Quick Inspiration Verses Chips
+    document.querySelectorAll('.quote-inspire-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const b = e.currentTarget.dataset.book;
+            const c = e.currentTarget.dataset.chapter;
+            const f = e.currentTarget.dataset.from;
+            const t = e.currentTarget.dataset.to;
+            quoteBookSelect.value = b;
+            populateChapters(quoteBookSelect, quoteChapterSelect);
+            quoteChapterSelect.value = c;
+            quoteVerseFromEl.value = f;
+            quoteVerseToEl.value = t;
+            updateQuoteLivePreview();
+            showToast(`Loaded ${b} ${c}:${f === t ? f : `${f}–${t}`}`);
+        });
+    });
+
+    // Random Inspiration Verse
+    const randomInspireBtn = document.getElementById('quote-random-inspire-btn');
+    if (randomInspireBtn) {
+        randomInspireBtn.addEventListener('click', () => {
+            const rand = FAMOUS_QUOTE_VERSES[Math.floor(Math.random() * FAMOUS_QUOTE_VERSES.length)];
+            quoteBookSelect.value = rand.book;
+            populateChapters(quoteBookSelect, quoteChapterSelect);
+            quoteChapterSelect.value = rand.chapter;
+            quoteVerseFromEl.value = rand.from;
+            quoteVerseToEl.value = rand.to;
+            updateQuoteLivePreview();
+            showToast(`Loaded ${rand.book} ${rand.chapter}:${rand.from === rand.to ? rand.from : `${rand.from}–${rand.to}`}`);
+        });
+    }
     
     document.querySelectorAll('.open-dict-modal-btn').forEach(btn => btn.addEventListener('click', () => { toggleMobileSidebar(false); openReferenceModal('dict'); }));
     document.querySelectorAll('.open-wiki-modal-btn').forEach(btn => btn.addEventListener('click', () => { toggleMobileSidebar(false); openReferenceModal('wiki'); }));
@@ -2041,7 +2655,12 @@ window.onload = async () => {
 
     document.getElementById('pexels-search-btn').addEventListener('click', searchPexels);
     document.getElementById('pexels-search-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') searchPexels(); });
-    document.getElementById('clear-bg-image-btn').addEventListener('click', () => { selectedPexelsImageUrl = null; document.querySelectorAll('#pexels-results img').forEach(i => i.classList.replace('border-primary', 'border-transparent')); document.getElementById('clear-bg-image-btn').classList.add('hidden'); });
+    document.getElementById('clear-bg-image-btn').addEventListener('click', () => { 
+        selectedPexelsImageUrl = null; 
+        document.querySelectorAll('#pexels-results img').forEach(i => i.classList.replace('border-primary', 'border-transparent')); 
+        document.getElementById('clear-bg-image-btn').classList.add('hidden'); 
+        updateQuoteLivePreview();
+    });
 
     document.getElementById('popup-verse-from').addEventListener('input', updateVerseRefDisplay); document.getElementById('popup-verse-to').addEventListener('input', updateVerseRefDisplay);
     document.getElementById('copy-verse-btn').addEventListener('click', () => { const { text, reference } = getVerseRangeText(); if (text) navigator.clipboard.writeText(`"${text}" — ${reference} (${currentTranslationName})`).then(() => showToast('Copied!')); });
@@ -2073,13 +2692,60 @@ window.onload = async () => {
     document.getElementById('highlights-search').addEventListener('input', (e) => { currentHighlightsSearch = e.target.value; renderHighlights(); });
     
     highlightsContent.addEventListener('click', e => {
+        const deleteCardBtn = e.target.closest('.delete-highlight-card-btn');
+        if (deleteCardBtn) {
+            const ref = deleteCardBtn.dataset.ref;
+            if (highlights[ref]) {
+                highlights[ref] = { deleted: true, updatedAt: Date.now() };
+                pushToCloud({ [`highlights.${ref}`]: highlights[ref] });
+                saveToLocalDB();
+                renderHighlights();
+                showToast(`Highlight for ${ref} deleted`);
+                if (document.querySelector('.chapter-heading')) {
+                    const currentBook = document.querySelector('.chapter-heading').dataset.book;
+                    const currentChapter = document.querySelector('.chapter-heading').dataset.chapter;
+                    loadChapter(currentBook, currentChapter, 'clear');
+                }
+            }
+            return;
+        }
+
+        const copyCardBtn = e.target.closest('.copy-highlight-card-btn');
+        if (copyCardBtn) {
+            const ref = copyCardBtn.dataset.ref;
+            const h = highlights[ref];
+            if (h) {
+                const text = `"${h.verseText || ''}" — ${ref}${h.note ? `\nReflection: ${h.note}` : ''}`;
+                navigator.clipboard.writeText(text).then(() => showToast(`Copied ${ref}`));
+            }
+            return;
+        }
+
+        const mdFormatBtn = e.target.closest('.md-format-btn');
+        if (mdFormatBtn) {
+            const container = mdFormatBtn.closest('.note-edit-mode');
+            const textarea = container ? container.querySelector('.note-textarea') : null;
+            if (textarea) {
+                const prefix = mdFormatBtn.dataset.prefix || '';
+                const suffix = mdFormatBtn.dataset.suffix || '';
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const text = textarea.value;
+                const selected = text.substring(start, end);
+                textarea.value = text.substring(0, start) + prefix + (selected || 'text') + suffix + text.substring(end);
+                textarea.focus();
+                textarea.setSelectionRange(start + prefix.length, start + prefix.length + (selected ? selected.length : 4));
+            }
+            return;
+        }
+
         const editBtn = e.target.closest('.edit-note-btn');
         const addBtn = e.target.closest('.add-note-btn');
         const saveBtn = e.target.closest('.save-note-btn');
         const cancelBtn = e.target.closest('.cancel-note-btn');
         const loadRef = e.target.closest('.load-highlight-ref');
 
-        if (loadRef && !e.target.closest('.note-container')) {
+        if (loadRef && !e.target.closest('.note-container') && !e.target.closest('button')) {
             loadAndScrollToHighlight(e.target.closest('.highlight-card').dataset.ref);
             return;
         }

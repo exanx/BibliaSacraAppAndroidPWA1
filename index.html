@@ -442,16 +442,16 @@
                         <span id="active-theme-name-badge" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 shrink-0">AMOLED Black</span>
                     </div>
 
-                    <!-- Category Tabs: Main | Light | Dark -->
+                    <!-- Category Tabs: Main (2) | Light (6) | Dark (6) -->
                     <div class="flex p-1 bg-gray-100 dark:bg-white/5 rounded-xl gap-1 mb-3">
                         <button type="button" class="theme-category-tab flex-1 py-1.5 px-2 text-xs font-semibold rounded-lg transition-all active bg-white dark:bg-white/10 text-primary shadow-xs" data-category="main">
-                            Main
+                            Main <span class="text-[10px] opacity-75 font-normal">(2)</span>
                         </button>
                         <button type="button" class="theme-category-tab flex-1 py-1.5 px-2 text-xs font-semibold rounded-lg transition-all text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" data-category="light">
-                            Light
+                            Light <span class="text-[10px] opacity-75 font-normal">(6)</span>
                         </button>
                         <button type="button" class="theme-category-tab flex-1 py-1.5 px-2 text-xs font-semibold rounded-lg transition-all text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" data-category="dark">
-                            Dark
+                            Dark <span class="text-[10px] opacity-75 font-normal">(6)</span>
                         </button>
                     </div>
 
@@ -777,66 +777,242 @@
     </div>
 
     <!-- Quote Modal -->
-    <div id="quote-modal" class="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden transition-opacity">
-        <div class="glass-panel modal-enter w-full max-w-md max-h-[90vh] flex flex-col rounded-2xl">
-            <div class="flex justify-between items-center p-5 border-b border-gray-100 dark:border-white/5 bg-white/40 dark:bg-black/40"><h3 class="text-lg font-bold text-gray-900 dark:text-white">Create Quote</h3><button id="close-quote-modal-btn" class="p-1.5 rounded-full text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-white/10 transition-all"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg></button></div>
-            <div class="p-5 overflow-y-auto space-y-4">
-                <div class="grid grid-cols-2 gap-3">
-                    <div><label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">Book</label><select id="quote-book-select" class="glass-input w-full p-2.5 rounded-lg text-sm outline-none"></select></div>
-                    <div><label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">Chapter</label><select id="quote-chapter-select" class="glass-input w-full p-2.5 rounded-lg text-sm outline-none"></select></div>
-                    <div><label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">From</label><input type="number" id="quote-verse-from" class="glass-input w-full p-2.5 rounded-lg text-sm outline-none" min="1"></div>
-                    <div><label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">To</label><input type="number" id="quote-verse-to" class="glass-input w-full p-2.5 rounded-lg text-sm outline-none" min="1"></div>
+    <div id="quote-modal" class="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center p-3 md:p-6 z-50 hidden transition-opacity">
+        <div class="glass-panel modal-enter w-full max-w-2xl max-h-[92vh] flex flex-col rounded-2xl overflow-hidden shadow-2xl">
+            <div class="flex justify-between items-center p-4 md:p-5 border-b border-gray-100 dark:border-white/5 bg-white/40 dark:bg-black/40">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-base md:text-lg font-bold text-gray-900 dark:text-white leading-tight">Quote Studio</h3>
+                        <p class="text-[11px] text-gray-500 dark:text-gray-400">Design and share aesthetic scripture art</p>
+                    </div>
                 </div>
-                <div><label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">Version</label><select id="translation-select-quote" class="glass-input w-full p-2.5 rounded-lg text-sm outline-none"></select></div>
-                <hr class="border-gray-200 dark:border-white/10">
+                <button id="close-quote-modal-btn" class="p-1.5 rounded-full text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-white/10 transition-all"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            
+            <div class="p-4 md:p-6 overflow-y-auto space-y-5">
+                <!-- LIVE VISUAL CANVAS PREVIEW -->
                 <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">Typography</label>
-                    <select id="quote-font-select" class="glass-input w-full p-2.5 rounded-lg text-sm outline-none">
-                        <!-- Populated by JS -->
-                    </select>
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label class="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Live Artwork Preview</label>
+                        <!-- Aspect Ratio Switcher -->
+                        <div class="flex bg-gray-100 dark:bg-white/5 p-0.5 rounded-lg text-[10px] font-bold">
+                            <button type="button" class="quote-ratio-btn px-2.5 py-1 rounded-md transition-all active bg-white dark:bg-white/10 text-primary shadow-xs" data-ratio="1:1">1:1 Square</button>
+                            <button type="button" class="quote-ratio-btn px-2.5 py-1 rounded-md transition-all text-gray-500 dark:text-gray-400" data-ratio="9:16">9:16 Story</button>
+                            <button type="button" class="quote-ratio-btn px-2.5 py-1 rounded-md transition-all text-gray-500 dark:text-gray-400" data-ratio="16:9">16:9 Wide</button>
+                        </div>
+                    </div>
+                    
+                    <div class="w-full bg-gray-200/60 dark:bg-black/60 rounded-xl p-3 flex items-center justify-center min-h-[220px] max-h-[340px] overflow-hidden border border-gray-200/80 dark:border-white/5">
+                        <div id="quote-live-preview-box" class="rounded-xl shadow-xl flex flex-col justify-between p-6 transition-all duration-200 relative overflow-hidden text-center" style="width: 280px; height: 280px; background-color: #111111; color: #FFFFFF; font-family: 'Crimson Pro', serif;">
+                            <div class="absolute inset-0 bg-cover bg-center transition-all opacity-40 hidden" id="quote-preview-bg-img"></div>
+                            <div class="relative z-10 my-auto">
+                                <p id="quote-preview-text" class="text-sm md:text-base leading-relaxed italic font-normal">“In the beginning was the Word, and the Word was with God, and the Word was God.”</p>
+                            </div>
+                            <div class="relative z-10 pt-3 border-t border-current/20">
+                                <p id="quote-preview-ref" class="text-xs font-semibold tracking-wider uppercase opacity-90">— John 1:1</p>
+                                <span class="text-[8px] opacity-60 uppercase tracking-widest mt-0.5 block">Biblia Sacra</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                 <div class="grid grid-cols-2 gap-3"><div><label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">Background</label><input type="color" id="quote-bg-color" value="#111111" class="glass-input w-full h-10 p-0.5 rounded-lg cursor-pointer"></div><div><label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">Text Color</label><input type="color" id="quote-text-color" value="#FFFFFF" class="glass-input w-full h-10 p-0.5 rounded-lg cursor-pointer"></div></div>
-                
-                <div class="mt-3">
-                    <div class="flex justify-between items-center mb-1">
-                        <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400">Background Image (Pexels)</label>
-                        <button id="clear-bg-image-btn" class="hidden text-[10px] font-bold uppercase text-red-500 hover:text-red-400 transition-colors">Remove Image</button>
+
+                <!-- Quick Scripture Inspiration -->
+                <div>
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400">Quick Scripture Inspiration</label>
+                        <button type="button" id="quote-random-inspire-btn" class="text-[10px] font-bold text-primary hover:underline flex items-center gap-1">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                            Random Verse
+                        </button>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5" id="quote-inspiration-chips">
+                        <button type="button" class="quote-inspire-btn text-[10px] font-semibold px-2 py-1 rounded-md btn-secondary hover:text-primary transition-colors" data-book="John" data-chapter="3" data-from="16" data-to="16">John 3:16</button>
+                        <button type="button" class="quote-inspire-btn text-[10px] font-semibold px-2 py-1 rounded-md btn-secondary hover:text-primary transition-colors" data-book="Psalms" data-chapter="23" data-from="1" data-to="1">Psalm 23:1</button>
+                        <button type="button" class="quote-inspire-btn text-[10px] font-semibold px-2 py-1 rounded-md btn-secondary hover:text-primary transition-colors" data-book="Philippians" data-chapter="4" data-from="13" data-to="13">Phil 4:13</button>
+                        <button type="button" class="quote-inspire-btn text-[10px] font-semibold px-2 py-1 rounded-md btn-secondary hover:text-primary transition-colors" data-book="Romans" data-chapter="8" data-from="28" data-to="28">Rom 8:28</button>
+                        <button type="button" class="quote-inspire-btn text-[10px] font-semibold px-2 py-1 rounded-md btn-secondary hover:text-primary transition-colors" data-book="Proverbs" data-chapter="3" data-from="5" data-to="6">Prov 3:5–6</button>
+                        <button type="button" class="quote-inspire-btn text-[10px] font-semibold px-2 py-1 rounded-md btn-secondary hover:text-primary transition-colors" data-book="Genesis" data-chapter="1" data-from="1" data-to="1">Gen 1:1</button>
+                    </div>
+                </div>
+
+                <!-- Scripture Selection -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+                    <div><label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">Book</label><select id="quote-book-select" class="glass-input w-full p-2 rounded-lg text-xs outline-none"></select></div>
+                    <div><label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">Chapter</label><select id="quote-chapter-select" class="glass-input w-full p-2 rounded-lg text-xs outline-none"></select></div>
+                    <div><label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">From Verse</label><input type="number" id="quote-verse-from" class="glass-input w-full p-2 rounded-lg text-xs outline-none" min="1" value="1"></div>
+                    <div><label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">To Verse</label><input type="number" id="quote-verse-to" class="glass-input w-full p-2 rounded-lg text-xs outline-none" min="1" value="1"></div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">Translation</label>
+                        <select id="translation-select-quote" class="glass-input w-full p-2 rounded-lg text-xs outline-none"></select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">Font Family</label>
+                        <select id="quote-font-select" class="glass-input w-full p-2 rounded-lg text-xs outline-none"></select>
+                    </div>
+                </div>
+
+                <!-- Color & Aesthetic Presets -->
+                <div>
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400">Palette & Aesthetic Presets</label>
+                        <div class="flex gap-2 items-center">
+                            <span class="text-[10px] text-gray-400">Custom Colors:</span>
+                            <input type="color" id="quote-bg-color" value="#111111" class="w-6 h-6 rounded-md cursor-pointer border-0 p-0" title="Background Color">
+                            <input type="color" id="quote-text-color" value="#FFFFFF" class="w-6 h-6 rounded-md cursor-pointer border-0 p-0" title="Text Color">
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5" id="quote-palette-presets">
+                        <button type="button" class="quote-palette-chip text-[10px] font-semibold px-2.5 py-1 rounded-lg border border-gray-200/60 dark:border-white/10" data-bg="#111111" data-text="#FFFFFF" data-font="Crimson Pro" style="background: #111111; color: #FFFFFF;">Velvet Noir</button>
+                        <button type="button" class="quote-palette-chip text-[10px] font-semibold px-2.5 py-1 rounded-lg border border-gray-200/60 dark:border-white/10" data-bg="#070e1c" data-text="#e2e8f0" data-font="Lora" style="background: #070e1c; color: #e2e8f0;">Night Sky</button>
+                        <button type="button" class="quote-palette-chip text-[10px] font-semibold px-2.5 py-1 rounded-lg border border-gray-200/60 dark:border-white/10" data-bg="#13091f" data-text="#f3e8ff" data-font="Merriweather" style="background: #13091f; color: #f3e8ff;">Royal Amethyst</button>
+                        <button type="button" class="quote-palette-chip text-[10px] font-semibold px-2.5 py-1 rounded-lg border border-gray-200/60 dark:border-white/10" data-bg="#13100a" data-text="#fef08a" data-font="Crimson Pro" style="background: #13100a; color: #fef08a;">Golden Age</button>
+                        <button type="button" class="quote-palette-chip text-[10px] font-semibold px-2.5 py-1 rounded-lg border border-gray-200/60 dark:border-white/10" data-bg="#f4ebd9" data-text="#382b1d" data-font="Tinos" style="background: #f4ebd9; color: #382b1d;">Ancient Scroll</button>
+                        <button type="button" class="quote-palette-chip text-[10px] font-semibold px-2.5 py-1 rounded-lg border border-gray-200/60 dark:border-white/10" data-bg="#eaf4ee" data-text="#123924" data-font="Lora" style="background: #eaf4ee; color: #123924;">Eden Sage</button>
+                        <button type="button" class="quote-palette-chip text-[10px] font-semibold px-2.5 py-1 rounded-lg border border-gray-200/60 dark:border-white/10" data-bg="#17070b" data-text="#ffe4e6" data-font="Playfair Display" style="background: #17070b; color: #ffe4e6;">Red Rose</button>
+                        <button type="button" class="quote-palette-chip text-[10px] font-semibold px-2.5 py-1 rounded-lg border border-gray-200/60 dark:border-white/10" data-bg="#040a17" data-text="#e0f2fe" data-font="Oswald" style="background: #040a17; color: #e0f2fe;">Neon Blue</button>
+                        <button type="button" class="quote-palette-chip text-[10px] font-semibold px-2.5 py-1 rounded-lg border border-gray-200/60 dark:border-white/10" data-bg="#ffffff" data-text="#18181b" data-font="Inter" style="background: #ffffff; color: #18181b;">Pure White</button>
+                    </div>
+                </div>
+
+                <!-- Pexels Photo Search -->
+                <div class="pt-2 border-t border-gray-100 dark:border-white/5">
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400">Background Photo (Pexels Photography)</label>
+                        <button id="clear-bg-image-btn" class="hidden text-[10px] font-bold uppercase text-red-500 hover:text-red-400 transition-colors">Clear Photo</button>
                     </div>
                     <div class="flex gap-2 mb-2">
-                        <input type="text" id="pexels-search-input" class="glass-input flex-grow p-2.5 rounded-lg text-sm outline-none placeholder-gray-400" placeholder="e.g. nature, mountains, sky">
-                        <button id="pexels-search-btn" class="btn-secondary text-xs font-medium px-3 rounded-lg">Search</button>
+                        <input type="text" id="pexels-search-input" class="glass-input flex-grow p-2 rounded-lg text-xs outline-none placeholder-gray-400" placeholder="e.g. dawn, mountains, starry sky, church">
+                        <button id="pexels-search-btn" class="btn-secondary text-xs font-semibold px-3 py-1.5 rounded-lg">Search Photos</button>
                     </div>
                     <div id="pexels-results" class="flex gap-2 overflow-x-auto pb-2 hidden custom-scrollbar"></div>
                 </div>
 
-                <button id="generate-and-download-btn" class="w-full bg-gray-900 dark:bg-white text-white dark:text-black font-medium py-2.5 rounded-lg hover:opacity-90 transition-opacity text-sm mt-2">Generate Image</button><div id="quote-loader" class="text-center hidden mt-2 text-sm text-gray-500">Generating...</div>
+                <!-- Bottom Export Actions -->
+                <div class="flex flex-col sm:flex-row gap-2 pt-2 border-t border-gray-100 dark:border-white/5">
+                    <button id="copy-quote-clipboard-btn" class="flex-1 btn-secondary font-semibold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                        <span>Copy to Clipboard</span>
+                    </button>
+                    <button id="generate-and-download-btn" class="flex-1 btn-primary font-semibold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 shadow-md">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        <span>Download High-Res PNG</span>
+                    </button>
+                </div>
+                <div id="quote-loader" class="text-center hidden text-xs text-gray-500 font-medium">Rendering artwork...</div>
             </div>
         </div>
     </div>
 
-    <!-- Highlights Modal -->
-    <div id="highlights-modal" class="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden transition-opacity">
-        <div class="glass-panel modal-enter w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl">
-            <div class="flex justify-between items-center p-5 border-b border-gray-100 dark:border-white/5 bg-white/40 dark:bg-black/40">
-                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Highlights & Notes</h3>
-                <button id="close-highlights-modal-btn" class="p-1.5 rounded-full text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-white/10 transition-all"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+    <!-- Highlights & Notes Modal -->
+    <div id="highlights-modal" class="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center p-3 md:p-6 z-50 hidden transition-opacity">
+        <div class="glass-panel modal-enter w-full max-w-2xl max-h-[92vh] flex flex-col rounded-2xl overflow-hidden shadow-2xl">
+            <div class="flex justify-between items-center p-4 md:p-5 border-b border-gray-100 dark:border-white/5 bg-white/40 dark:bg-black/40">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.89 1.147l-3.102.993a.375.375 0 01-.495-.495l.993-3.102a4.5 4.5 0 011.147-1.89l13.418-13.418z"></path></svg>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-base md:text-lg font-bold text-gray-900 dark:text-white leading-tight">Highlights & Notes</h3>
+                            <span id="highlights-count-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">0</span>
+                        </div>
+                        <p class="text-[11px] text-gray-500 dark:text-gray-400">Personal reflections, color tags & annotations</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="export-notes-md-btn" class="btn-secondary text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5" title="Export all notes as Markdown file">
+                        <svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <span>Export .md</span>
+                    </button>
+                    <button id="copy-all-notes-btn" class="btn-secondary text-xs font-semibold px-2.5 py-1.5 rounded-lg hidden sm:flex items-center gap-1.5" title="Copy all notes to clipboard">
+                        <svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                        <span>Copy All</span>
+                    </button>
+                    <button id="close-highlights-modal-btn" class="p-1.5 rounded-full text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-white/10 transition-all"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                </div>
             </div>
-            <div class="p-5 overflow-y-auto">
-                <div class="relative mb-4"><div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none"><svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path></svg></div><input type="text" id="highlights-search" class="glass-input w-full pl-10 pr-4 py-2.5 rounded-lg outline-none text-sm placeholder-gray-400" placeholder="Search references, text, or tags..."></div>
-                <div id="highlights-category-filter" class="flex flex-wrap gap-1.5 mb-5 pb-5 border-b border-gray-200 dark:border-white/10"></div>
-                <div id="highlights-content" class="space-y-4"></div>
+
+            <div class="p-4 md:p-6 overflow-y-auto space-y-4">
+                <!-- Search & Filters Toolbar -->
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <div class="relative flex-1">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path></svg>
+                        </div>
+                        <input type="text" id="highlights-search" class="glass-input w-full pl-9 pr-3 py-2 rounded-lg outline-none text-xs placeholder-gray-400" placeholder="Search references, text, notes, or tags...">
+                    </div>
+                    <!-- Filter Pill + Sort Dropdown -->
+                    <div class="flex items-center gap-1.5">
+                        <button id="filter-notes-only-btn" class="btn-secondary text-xs font-semibold px-2.5 py-2 rounded-lg flex items-center gap-1 shrink-0">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                            <span>Notes Only</span>
+                        </button>
+                        <select id="highlights-sort-select" class="glass-input text-xs font-semibold p-2 rounded-lg outline-none cursor-pointer">
+                            <option value="newest">Newest First</option>
+                            <option value="oldest">Oldest First</option>
+                            <option value="scripture">Scripture Order</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Category Filter Pills -->
+                <div id="highlights-category-filter" class="flex flex-wrap gap-1.5 pb-2 border-b border-gray-200 dark:border-white/10"></div>
+
+                <!-- Highlight Cards List -->
+                <div id="highlights-content" class="space-y-3.5"></div>
             </div>
         </div>
     </div>
 
     <!-- Bookmarks Modal -->
-    <div id="bookmarks-modal" class="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden transition-opacity">
-        <div class="glass-panel modal-enter w-full max-w-sm max-h-[80vh] flex flex-col rounded-2xl">
-            <div class="flex justify-between items-center p-5 border-b border-gray-100 dark:border-white/5 bg-white/40 dark:bg-black/40">
-                <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">Saved Bookmarks</h3>
-                <button id="close-bookmarks-modal-btn" class="p-1.5 rounded-full text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-white/10 transition-all"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+    <div id="bookmarks-modal" class="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center p-3 md:p-6 z-50 hidden transition-opacity">
+        <div class="glass-panel modal-enter w-full max-w-md max-h-[85vh] flex flex-col rounded-2xl overflow-hidden shadow-2xl">
+            <div class="flex justify-between items-center p-4 md:p-5 border-b border-gray-100 dark:border-white/5 bg-white/40 dark:bg-black/40">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.5 3.5h-11a2 2 0 00-2 2v15l6.5-3 6.5 3v-15a2 2 0 00-2-2z"></path></svg>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-base md:text-lg font-bold text-gray-900 dark:text-white leading-tight">Bookmarks</h3>
+                            <span id="bookmarks-count-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">0</span>
+                        </div>
+                        <p class="text-[11px] text-gray-500 dark:text-gray-400">Quick-access saved scripture chapters</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="add-current-bookmark-btn" class="btn-primary text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 shadow-xs" title="Bookmark current chapter">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4.5v15m7.5-7.5h-15"></path></svg>
+                        <span>+ Bookmark</span>
+                    </button>
+                    <button id="close-bookmarks-modal-btn" class="p-1.5 rounded-full text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-white/10 transition-all"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                </div>
             </div>
-            <div class="p-5 overflow-y-auto"><div id="bookmarks-content" class="space-y-2"></div></div>
+
+            <!-- Search Filter & Actions Bar -->
+            <div class="p-3 border-b border-gray-100 dark:border-white/5 bg-white/20 dark:bg-black/20 flex items-center gap-2">
+                <div class="relative flex-1">
+                    <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-gray-400">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <input type="text" id="bookmarks-search-input" class="glass-input w-full pl-8 pr-2.5 py-1.5 rounded-lg text-xs outline-none placeholder-gray-400" placeholder="Filter bookmarks by book or chapter...">
+                </div>
+                <button id="copy-bookmarks-btn" class="btn-secondary text-[11px] font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 shrink-0" title="Copy all bookmarks to clipboard">
+                    <svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                    <span>Copy All</span>
+                </button>
+            </div>
+
+            <!-- Bookmarks List -->
+            <div class="p-4 overflow-y-auto flex-1 space-y-2">
+                <div id="bookmarks-content" class="space-y-2"></div>
+            </div>
         </div>
     </div>
 
