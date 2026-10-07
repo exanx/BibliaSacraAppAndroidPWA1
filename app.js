@@ -272,22 +272,63 @@ const CANONICAL_BOOK_ORDER = [
 
 const FAMOUS_QUOTE_VERSES = [
     { book: 'John', chapter: '3', from: '16', to: '16' },
-    { book: 'Psalms', chapter: '23', from: '1', to: '1' },
+    { book: 'Psalms', chapter: '23', from: '1', to: '6' },
     { book: 'Philippians', chapter: '4', from: '13', to: '13' },
     { book: 'Romans', chapter: '8', from: '28', to: '28' },
     { book: 'Proverbs', chapter: '3', from: '5', to: '6' },
     { book: 'Jeremiah', chapter: '29', from: '11', to: '11' },
     { book: 'Isaiah', chapter: '40', from: '31', to: '31' },
-    { book: 'Genesis', chapter: '1', from: '1', to: '1' },
+    { book: 'Genesis', chapter: '1', from: '1', to: '3' },
     { book: 'Matthew', chapter: '6', from: '33', to: '33' },
-    { book: 'Psalms', chapter: '46', from: '1', to: '1' },
+    { book: 'Psalms', chapter: '46', from: '1', to: '2' },
     { book: 'Joshua', chapter: '1', from: '9', to: '9' },
-    { book: '1 Corinthians', chapter: '13', from: '4', to: '7' },
+    { book: '1 Corinthians', chapter: '13', from: '4', to: '8' },
     { book: 'Micah', chapter: '6', from: '8', to: '8' },
     { book: 'Ephesians', chapter: '2', from: '8', to: '9' },
     { book: 'Hebrews', chapter: '11', from: '1', to: '1' },
-    { book: 'Galatians', chapter: '5', from: '22', to: '23' }
+    { book: 'Galatians', chapter: '5', from: '22', to: '23' },
+    { book: 'Romans', chapter: '12', from: '2', to: '2' },
+    { book: 'Psalms', chapter: '119', from: '105', to: '105' },
+    { book: 'John', chapter: '14', from: '6', to: '6' },
+    { book: 'Psalms', chapter: '121', from: '1', to: '2' },
+    { book: 'Matthew', chapter: '11', from: '28', to: '30' },
+    { book: 'Philippians', chapter: '4', from: '6', to: '7' },
+    { book: 'Isaiah', chapter: '41', from: '10', to: '10' },
+    { book: '2 Timothy', chapter: '1', from: '7', to: '7' },
+    { book: '1 Peter', chapter: '5', from: '7', to: '7' },
+    { book: 'Psalms', chapter: '91', from: '1', to: '2' },
+    { book: 'Colossians', chapter: '3', from: '12', to: '14' },
+    { book: 'Lamentations', chapter: '3', from: '22', to: '23' },
+    { book: 'Psalms', chapter: '27', from: '1', to: '1' },
+    { book: 'Proverbs', chapter: '4', from: '23', to: '23' }
 ];
+
+function renderRandomQuoteInspirationChips() {
+    const container = document.getElementById('quote-inspiration-chips');
+    if (!container) return;
+    
+    // Pick 7 distinct random verses from the pool each time
+    const shuffled = [...FAMOUS_QUOTE_VERSES].sort(() => 0.5 - Math.random());
+    const selected = shuffled.slice(0, 7);
+    
+    container.innerHTML = selected.map(v => {
+        const verseStr = v.from === v.to ? v.from : `${v.from}–${v.to}`;
+        const label = `${v.book} ${v.chapter}:${verseStr}`;
+        return `<button type="button" class="quote-inspire-btn text-[10px] font-semibold px-2 py-1 rounded-md btn-secondary hover:text-primary transition-colors cursor-pointer" data-book="${v.book}" data-chapter="${v.chapter}" data-from="${v.from}" data-to="${v.to}">${label}</button>`;
+    }).join('');
+    
+    container.querySelectorAll('.quote-inspire-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            quoteBookSelect.value = btn.dataset.book;
+            populateChapters(quoteBookSelect, quoteChapterSelect);
+            quoteChapterSelect.value = btn.dataset.chapter;
+            quoteVerseFromEl.value = btn.dataset.from;
+            quoteVerseToEl.value = btn.dataset.to;
+            updateQuoteLivePreview();
+            showToast(`Loaded ${btn.dataset.book} ${btn.dataset.chapter}:${btn.dataset.from === btn.dataset.to ? btn.dataset.from : `${btn.dataset.from}–${btn.dataset.to}`}`);
+        });
+    });
+}
 let isFetching = false, oldestIndex = -1, newestIndex = -1;
 const loaderHTML = `<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4 opacity-80"></div><p class="text-xs font-semibold tracking-wider uppercase text-gray-400">Loading...</p>`;
 
@@ -1553,6 +1594,7 @@ function openQuoteModal(defaultBook, defaultChapter, defaultFrom, defaultTo) {
     quoteVerseToEl.value = defaultTo || defaultFrom || '1'; 
     document.getElementById('translation-select-quote').value = document.querySelector('.translation-select').value || 'drb'; 
     quoteModal.classList.remove('hidden'); 
+    renderRandomQuoteInspirationChips();
     updateQuoteLivePreview();
 }
 
@@ -1802,9 +1844,74 @@ async function createQuoteCanvas(quoteData) {
     ctx.fillStyle = refColor;
     ctx.fillText(ref, canvas.width / 2, startY);
     
-    ctx.font = '500 18px Inter';
-    ctx.fillStyle = isDarkBg ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.4)';
-    ctx.fillText('bibliasacra.web.app', canvas.width / 2, canvas.height - 45);
+    // === ENHANCED WATERMARK FOR ALL 3 SIZES (1:1, 9:16, 16:9) ===
+    // Beautiful, visible with subtle transparency, without obscuring or affecting the quote image
+    const wmFontSize = currentQuoteAspectRatio === '9:16' ? 22 : (currentQuoteAspectRatio === '16:9' ? 22 : 20);
+    const wmY = currentQuoteAspectRatio === '9:16' ? canvas.height - 70 : (currentQuoteAspectRatio === '16:9' ? canvas.height - 46 : canvas.height - 50);
+    
+    const prefixText = 'Created with ';
+    const brandText = 'bibliasacra.web.app';
+    
+    ctx.save();
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    
+    const normalFont = `400 ${wmFontSize}px Inter, -apple-system, sans-serif`;
+    const boldFont = `700 ${wmFontSize}px Inter, -apple-system, sans-serif`;
+    
+    ctx.font = normalFont;
+    const prefixW = ctx.measureText(prefixText).width;
+    ctx.font = boldFont;
+    const brandW = ctx.measureText(brandText).width;
+    
+    const iconW = Math.round(wmFontSize * 0.85);
+    const iconGap = 8;
+    const totalContentW = iconW + iconGap + prefixW + brandW;
+    
+    const padX = 18;
+    const padY = 8;
+    const pillW = totalContentW + (padX * 2);
+    const pillH = wmFontSize + (padY * 2);
+    const pillX = (canvas.width - pillW) / 2;
+    const pillY = wmY - (pillH / 2);
+    const radius = pillH / 2;
+    
+    // Draw translucent rounded pill badge
+    ctx.beginPath();
+    ctx.moveTo(pillX + radius, pillY);
+    ctx.arcTo(pillX + pillW, pillY, pillX + pillW, pillY + pillH, radius);
+    ctx.arcTo(pillX + pillW, pillY + pillH, pillX, pillY + pillH, radius);
+    ctx.arcTo(pillX, pillY + pillH, pillX, pillY, radius);
+    ctx.arcTo(pillX, pillY, pillX + pillW, pillY, radius);
+    ctx.closePath();
+    
+    ctx.fillStyle = isDarkBg ? 'rgba(0, 0, 0, 0.45)' : 'rgba(255, 255, 255, 0.65)';
+    ctx.fill();
+    ctx.strokeStyle = isDarkBg ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.10)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    
+    // Draw subtle brand sacred icon
+    const iconLeft = pillX + padX;
+    ctx.strokeStyle = isDarkBg ? 'rgba(255, 255, 255, 0.75)' : 'rgba(20, 20, 25, 0.70)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(iconLeft + iconW / 2, wmY - iconW / 2);
+    ctx.lineTo(iconLeft + iconW / 2, wmY + iconW / 2);
+    ctx.moveTo(iconLeft + 1, wmY - iconW / 6);
+    ctx.lineTo(iconLeft + iconW - 1, wmY - iconW / 6);
+    ctx.stroke();
+    
+    // "Created with " (softer weight)
+    ctx.font = normalFont;
+    ctx.fillStyle = isDarkBg ? 'rgba(255, 255, 255, 0.72)' : 'rgba(25, 25, 30, 0.70)';
+    ctx.fillText(prefixText, iconLeft + iconW + iconGap, wmY);
+    
+    // "bibliasacra.web.app" (bold & emphasized)
+    ctx.font = boldFont;
+    ctx.fillStyle = isDarkBg ? '#FFFFFF' : '#0a0a0a';
+    ctx.fillText(brandText, iconLeft + iconW + iconGap + prefixW, wmY);
+    ctx.restore();
     
     return canvas;
 }
@@ -2054,6 +2161,150 @@ function copyAllNotesToClipboard() {
     }).catch(() => {
         showToast('Failed to copy to clipboard.');
     });
+}
+
+function importNotesFromMarkdownText(content) {
+    if (!content || typeof content !== 'string') return 0;
+    
+    const text = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    const lines = text.split('\n');
+    let currentRef = null;
+    let currentColor = 'yellow';
+    let currentCategory = 'General';
+    let currentVerseText = '';
+    let currentNoteLines = [];
+    let isReadingNote = false;
+    let importedCount = 0;
+    const cloudUpdates = {};
+    
+    const saveCurrent = () => {
+        if (!currentRef) return;
+        const finalRef = currentRef.trim();
+        const validColors = ['yellow', 'green', 'blue', 'pink', 'purple'];
+        const color = validColors.includes(currentColor.toLowerCase()) ? currentColor.toLowerCase() : 'yellow';
+        const category = currentCategory.trim() || 'General';
+        const note = currentNoteLines.join('\n').trim();
+        
+        if (category && (!categories[category] || categories[category].deleted)) {
+            categories[category] = { updatedAt: Date.now() };
+            cloudUpdates[`categories.${category}`] = categories[category];
+        }
+        
+        highlights[finalRef] = {
+            color: color,
+            category: category,
+            note: note,
+            verseText: currentVerseText.trim(),
+            updatedAt: Date.now()
+        };
+        cloudUpdates[`highlights.${finalRef}`] = highlights[finalRef];
+        importedCount++;
+        
+        currentRef = null;
+        currentColor = 'yellow';
+        currentCategory = 'General';
+        currentVerseText = '';
+        currentNoteLines = [];
+        isReadingNote = false;
+    };
+    
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const trimmed = line.trim();
+        
+        // Check for reference header, e.g. "## John 3:16", "## 1 Corinthians 13:4-7", "## Genesis 1:1"
+        const headerMatch = trimmed.match(/^#{1,3}\s+([1-3]?\s*[A-Za-z]+(?:\s+[A-Za-z]+)*\s+\d+(?::\d+(?:-\d+)?)?)\b/);
+        if (headerMatch && !trimmed.toLowerCase().includes('reflection') && !trimmed.toLowerCase().includes('biblia sacra') && !trimmed.toLowerCase().includes('notes & highlights')) {
+            saveCurrent();
+            currentRef = headerMatch[1].trim();
+            continue;
+        }
+        
+        if (trimmed === '---') {
+            saveCurrent();
+            continue;
+        }
+        
+        if (!currentRef) continue;
+        
+        const colorMatch = trimmed.match(/^-\s*\*\*Color(?:\s+Tag)?\*\*:\s*([a-zA-Z]+)/i);
+        if (colorMatch) {
+            currentColor = colorMatch[1].trim().toLowerCase();
+            continue;
+        }
+        
+        const catMatch = trimmed.match(/^-\s*\*\*Category\*\*:\s*(.+)/i);
+        if (catMatch) {
+            currentCategory = catMatch[1].trim();
+            continue;
+        }
+        
+        if (trimmed.match(/^-\s*\*\*Saved\*\*:/i)) continue;
+        
+        if (trimmed.startsWith('>')) {
+            const quoteContent = trimmed.replace(/^>\s*/, '').replace(/^["“](.*)["”]$/, '$1').trim();
+            if (currentVerseText) {
+                currentVerseText += ' ' + quoteContent;
+            } else {
+                currentVerseText = quoteContent;
+            }
+            continue;
+        }
+        
+        if (trimmed.match(/^#{1,4}\s*Reflection/i) || trimmed.match(/^#{1,4}\s*Note/i)) {
+            isReadingNote = true;
+            continue;
+        }
+        
+        if (isReadingNote) {
+            currentNoteLines.push(line);
+        } else if (trimmed.length > 0 && !trimmed.startsWith('#') && !trimmed.startsWith('-')) {
+            currentNoteLines.push(line);
+        }
+    }
+    
+    saveCurrent();
+    
+    if (importedCount > 0) {
+        saveToLocalDB();
+        pushToCloud(cloudUpdates);
+        renderHighlights();
+        
+        // Re-apply highlight classes in reading DOM if open chapter has matching verses
+        document.querySelectorAll('.verse').forEach(el => {
+            const ref = el.dataset.ref;
+            if (ref && highlights[ref] && !highlights[ref].deleted) {
+                el.classList.remove('highlight-yellow', 'highlight-green', 'highlight-blue', 'highlight-pink', 'highlight-purple');
+                el.classList.add(`highlight-${highlights[ref].color}`);
+            }
+        });
+    }
+    
+    return importedCount;
+}
+
+function handleNotesFileImport(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        try {
+            const content = event.target.result;
+            const count = importNotesFromMarkdownText(content);
+            if (count > 0) {
+                showToast(`Imported ${count} note${count === 1 ? '' : 's'} from Markdown!`);
+            } else {
+                showToast('No notes or scripture references found in file.');
+            }
+        } catch (err) {
+            console.error('Failed to import notes markdown:', err);
+            showToast('Error reading Markdown file.');
+        } finally {
+            e.target.value = '';
+        }
+    };
+    reader.readAsText(file);
 }
 
 function renderBookmarks() {
@@ -2532,6 +2783,12 @@ window.onload = async () => {
     if (exportNotesBtn) exportNotesBtn.addEventListener('click', exportNotesAsMarkdown);
     const copyAllNotesBtn = document.getElementById('copy-all-notes-btn');
     if (copyAllNotesBtn) copyAllNotesBtn.addEventListener('click', copyAllNotesToClipboard);
+    const importNotesBtn = document.getElementById('import-notes-md-btn');
+    const importNotesInput = document.getElementById('import-notes-file-input');
+    if (importNotesBtn && importNotesInput) {
+        importNotesBtn.addEventListener('click', () => importNotesInput.click());
+        importNotesInput.addEventListener('change', handleNotesFileImport);
+    }
 
     // Bookmarks Modal Wiring
     const bookmarksModal = document.getElementById('bookmarks-modal');
@@ -2610,22 +2867,8 @@ window.onload = async () => {
         });
     });
 
-    // Quick Inspiration Verses Chips
-    document.querySelectorAll('.quote-inspire-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const b = e.currentTarget.dataset.book;
-            const c = e.currentTarget.dataset.chapter;
-            const f = e.currentTarget.dataset.from;
-            const t = e.currentTarget.dataset.to;
-            quoteBookSelect.value = b;
-            populateChapters(quoteBookSelect, quoteChapterSelect);
-            quoteChapterSelect.value = c;
-            quoteVerseFromEl.value = f;
-            quoteVerseToEl.value = t;
-            updateQuoteLivePreview();
-            showToast(`Loaded ${b} ${c}:${f === t ? f : `${f}–${t}`}`);
-        });
-    });
+    // Quick Inspiration Verses: Initialize dynamic random verses on app load
+    renderRandomQuoteInspirationChips();
 
     // Random Inspiration Verse
     const randomInspireBtn = document.getElementById('quote-random-inspire-btn');
@@ -2637,6 +2880,7 @@ window.onload = async () => {
             quoteChapterSelect.value = rand.chapter;
             quoteVerseFromEl.value = rand.from;
             quoteVerseToEl.value = rand.to;
+            renderRandomQuoteInspirationChips(); // Re-shuffle inspiration chips
             updateQuoteLivePreview();
             showToast(`Loaded ${rand.book} ${rand.chapter}:${rand.from === rand.to ? rand.from : `${rand.from}–${rand.to}`}`);
         });

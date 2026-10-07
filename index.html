@@ -392,7 +392,7 @@
     <div id="settings-modal" class="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden transition-opacity">
         <div class="glass-panel modal-enter w-full max-w-xl max-h-[92vh] flex flex-col rounded-2xl shadow-2xl overflow-hidden">
             <div class="flex justify-between items-center p-5 border-b border-gray-100 dark:border-white/5 bg-white/40 dark:bg-black/40 z-10">
-                <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">Settings & Reading Experience</h3>
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">Settings</h3>
                 <button id="close-settings-modal-btn" class="p-1.5 rounded-full text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-white/10 transition-all"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
             </div>
             
@@ -926,6 +926,11 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
+                    <button id="import-notes-md-btn" class="btn-secondary text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5" title="Import notes from Markdown (.md) file">
+                        <svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                        <span>Import .md</span>
+                    </button>
+                    <input type="file" id="import-notes-file-input" accept=".md,text/markdown,text/plain" class="hidden">
                     <button id="export-notes-md-btn" class="btn-secondary text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5" title="Export all notes as Markdown file">
                         <svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                         <span>Export .md</span>
