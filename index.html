@@ -431,9 +431,14 @@
 
     <!-- Mobile Header -->
     <header class="fixed top-0 w-full z-30 glass-nav px-3 py-2.5 flex justify-between items-center lg:hidden transition-transform">
-        <button id="open-mobile-sidebar-btn-floating" class="p-2 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer" aria-label="Menu" title="Menu">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path></svg>
-        </button>
+        <div class="flex items-center gap-1">
+            <button id="open-mobile-sidebar-btn-floating" class="p-2 rounded-xl text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-primary hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer" aria-label="Menu" title="Menu">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path></svg>
+            </button>
+            <button class="open-quote-modal-btn p-2 rounded-xl text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-primary hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer" aria-label="Quote Maker" title="Quote Maker">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5z"></path></svg>
+            </button>
+        </div>
         <div class="flex-1 flex flex-col items-center justify-center cursor-pointer open-grid-modal-btn group px-2 min-w-0">
             <div class="flex items-center gap-1.5 max-w-full">
                 <span class="current-selection-text font-bold text-sm tracking-tight text-gray-900 dark:text-white group-hover:text-primary transition-colors truncate">Genesis 1</span>
@@ -1168,7 +1173,7 @@
                 </div>
                 <div class="flex items-center gap-2.5 w-full sm:w-auto">
                     <button type="button" id="copy-quote-clipboard-btn" class="flex-1 sm:flex-none btn-secondary font-semibold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition-all hover:scale-[1.02] cursor-pointer">
-                        <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                        <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 9h9a2 2 0 012 2v9a2 2 0 01-2 2H9a2 2 0 01-2-2v-9a2 2 0 012-2z M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path></svg>
                         <span>Copy Image</span>
                     </button>
                     <button type="button" id="generate-and-download-btn" class="flex-1 sm:flex-none btn-primary font-semibold py-2.5 px-5 rounded-xl text-xs flex items-center justify-center gap-2 shadow-md transition-all hover:scale-[1.02] cursor-pointer">
@@ -1223,7 +1228,7 @@
                             </button>
                             <div class="my-1 border-t border-gray-100 dark:border-white/5"></div>
                             <button type="button" id="copy-all-notes-btn" class="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-2.5">
-                                <svg class="w-3.5 h-3.5 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                                <svg class="w-3.5 h-3.5 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 9h9a2 2 0 012 2v9a2 2 0 01-2 2H9a2 2 0 01-2-2v-9a2 2 0 012-2z M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path></svg>
                                 <div>
                                     <div class="font-semibold leading-tight">Copy All Notes</div>
                                     <div class="text-[10px] text-gray-400">Copy to clipboard</div>
@@ -1287,7 +1292,7 @@
                 <div class="flex items-center gap-2">
                     <button id="add-current-bookmark-btn" class="btn-primary text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 shadow-xs" title="Bookmark current chapter">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4.5v15m7.5-7.5h-15"></path></svg>
-                        <span>+ Bookmark</span>
+                        <span>Bookmark</span>
                     </button>
                     <button id="close-bookmarks-modal-btn" class="p-1.5 rounded-full text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-white/10 transition-all"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
                 </div>
@@ -1302,7 +1307,7 @@
                     <input type="text" id="bookmarks-search-input" class="glass-input w-full pl-8 pr-2.5 py-1.5 rounded-lg text-xs outline-none placeholder-gray-400" placeholder="Filter bookmarks by book or chapter...">
                 </div>
                 <button id="copy-bookmarks-btn" class="btn-secondary text-[11px] font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 shrink-0" title="Copy all bookmarks to clipboard">
-                    <svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                    <svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 9h9a2 2 0 012 2v9a2 2 0 01-2 2H9a2 2 0 01-2-2v-9a2 2 0 012-2z M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path></svg>
                     <span>Copy All</span>
                 </button>
             </div>
@@ -1322,7 +1327,7 @@
                 <div class="grid grid-cols-2 gap-3 mb-4"><div><label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">From</label><input type="number" id="popup-verse-from" class="glass-input w-full p-2 text-sm rounded-lg outline-none" min="1"></div><div><label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">To</label><input type="number" id="popup-verse-to" class="glass-input w-full p-2 text-sm rounded-lg outline-none" min="1"></div></div>
                 <p id="highlight-verse-ref-display" class="text-lg font-bold text-center mb-5 text-primary"></p>
                 <div class="grid grid-cols-2 gap-2 mb-5">
-                    <button id="copy-verse-btn" class="btn-secondary flex items-center justify-center gap-1.5 text-xs font-medium py-2 px-3 rounded-lg"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75"></path></svg> Copy</button>
+                    <button id="copy-verse-btn" class="btn-secondary flex items-center justify-center gap-1.5 text-xs font-medium py-2 px-3 rounded-lg"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 9h9a2 2 0 012 2v9a2 2 0 01-2 2H9a2 2 0 01-2-2v-9a2 2 0 012-2z M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path></svg> Copy</button>
                     <button id="share-verse-btn" class="btn-secondary flex items-center justify-center gap-1.5 text-xs font-medium py-2 px-3 rounded-lg"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"></path></svg> Share</button>
                     <button id="bookmark-verse-btn" class="btn-secondary flex items-center justify-center gap-1.5 text-xs font-medium py-2 px-3 rounded-lg"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17.5 3.5h-11a2 2 0 00-2 2v15l6.5-3 6.5 3v-15a2 2 0 00-2-2z"></path></svg> <span id="bookmark-btn-text">Bookmark</span></button>
                     <button id="quote-verse-btn" class="btn-secondary flex items-center justify-center gap-1.5 text-xs font-medium py-2 px-3 rounded-lg"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5z"></path></svg> Quote</button>
