@@ -1124,7 +1124,15 @@ async function fetchChapterHTML(book, chapter) {
         versesHtml += `<p class="verse-paragraph ${hlClass} ${bmClass}" data-verse-ref="${prefix}${v.verse}"><sup class="verse-num" title="Verse Actions">${v.verse}</sup> ${cleanedText}</p>`; 
     });
     versesHtml += '</div>';
-    return `<h2 class="chapter-heading text-3xl font-bold mt-8 mb-6 pb-2 text-gray-900 dark:text-white tracking-tight" data-book="${book}" data-chapter="${chapter}">${data.reference}</h2>` + versesHtml;
+    const headerHtml = `
+    <div class="flex items-center justify-between mt-8 mb-6 pb-2 border-b border-gray-100 dark:border-white/5">
+        <h2 class="chapter-heading text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight" data-book="${book}" data-chapter="${chapter}">${data.reference}</h2>
+        <button type="button" class="chapter-listen-action-btn flex items-center gap-1.5 px-3 py-1.5 rounded-xl btn-secondary text-xs font-semibold text-primary hover:bg-primary/10 transition-all cursor-pointer" data-book="${book}" data-chapter="${chapter}" title="Listen to this chapter">
+            <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M11 5L6 9H2v6h4l5 4V5z"></path></svg>
+            <span>Listen</span>
+        </button>
+    </div>`;
+    return headerHtml + versesHtml;
 }
 
 function setReferenceTab(mode) {
@@ -1215,7 +1223,14 @@ async function loadChapter(book, chapter, direction = 'clear', targetVerse = nul
     if (isFetching) return; isFetching = true;
     const targetIndex = flatBible.findIndex(b => b.book === book && b.chapter === chapter); if (targetIndex === -1) { isFetching = false; return; }
 
-    if (direction === 'clear') { if(initialMessage) initialMessage.style.display = 'none'; scriptureDisplay.innerHTML = `<div class="text-center py-20">${loaderHTML}</div>`; toggleMobileSidebar(false); } 
+    if (direction === 'clear') { 
+        if (typeof voiceReader !== 'undefined' && voiceReader.isPlaying && !voiceReader.isTransitioningChapter) {
+            voiceReader.stop();
+        }
+        if(initialMessage) initialMessage.style.display = 'none'; 
+        scriptureDisplay.innerHTML = `<div class="text-center py-20">${loaderHTML}</div>`; 
+        toggleMobileSidebar(false); 
+    } 
     else if (direction === 'next') { bottomSentinel.innerHTML = `<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>`; bottomSentinel.classList.remove('opacity-0'); } 
     else if (direction === 'prev') { topSentinel.innerHTML = `<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>`; topSentinel.classList.remove('opacity-0'); }
 
@@ -2823,6 +2838,638 @@ function renderHighlights() {
     highlightsContent.innerHTML = html;
 }
 
+// ========================================================
+// VOICE READER & PWA BACKGROUND AUDIO ENGINE
+// ========================================================
+const voiceReader = {
+    isPlaying: false,
+    isPaused: false,
+    isTransitioningChapter: false,
+    currentBook: 'Genesis',
+    currentChapter: '1',
+    currentVerseIndex: 0,
+    verses: [],
+    rate: 1.0,
+    pitch: 1.0,
+    selectedVoiceURI: null,
+    availableVoices: [],
+    activeUtterance: null,
+    silentAudio: null,
+    wakeLock: null,
+    watchdogInterval: null,
+    watchdogTickCount: 0,
+    autoScroll: true,
+
+    init() {
+        const savedRate = localStorage.getItem('biblia_voice_rate');
+        if (savedRate) this.rate = parseFloat(savedRate) || 1.0;
+        this.selectedVoiceURI = localStorage.getItem('biblia_voice_uri') || null;
+
+        this.initBackgroundAudioAnchor();
+        this.loadVoices();
+
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                this.loadVoices();
+            };
+        }
+
+        this.setupMediaSession();
+
+        // Keep background audio active when tab is minimized or device is locked in PWA mode
+        document.addEventListener('visibilitychange', () => {
+            if (this.isPlaying && !this.isPaused) {
+                if (document.hidden) {
+                    if (this.silentAudio && this.silentAudio.paused) {
+                        this.silentAudio.play().catch(() => {});
+                    }
+                }
+            }
+        });
+
+        this.bindUI();
+    },
+
+    initBackgroundAudioAnchor() {
+        if (this.silentAudio) return;
+        // Silent looping WAV audio anchor: keeps the mobile OS audio session and speech synthesis active in background
+        const audio = document.createElement('audio');
+        audio.id = 'bg-reading-silent-anchor';
+        audio.loop = true;
+        audio.setAttribute('playsinline', '');
+        audio.setAttribute('webkit-playsinline', '');
+        // Minimal valid 16-bit PCM silent WAV base64
+        audio.src = 'data:audio/wav;base64,UklGRjIAAABXQVZFZm10IBIAAAABAAEAQB8AAEAfAAABAAgAAABmYWN0BAAAAAAAAABkYXRhAAAAAA==';
+        audio.volume = 0.01;
+        document.body.appendChild(audio);
+        this.silentAudio = audio;
+    },
+
+    loadVoices() {
+        if (!('speechSynthesis' in window)) return;
+        const allVoices = window.speechSynthesis.getVoices() || [];
+        if (!allVoices.length) return;
+        this.availableVoices = allVoices;
+        this.updateVoiceDropdownUI();
+    },
+
+    updateVoiceDropdownUI() {
+        const container = document.getElementById('voice-list-container');
+        const settingsSelect = document.getElementById('settings-voice-select');
+        const voiceSelectLabel = document.getElementById('voice-select-label');
+
+        if (container) {
+            container.innerHTML = '';
+            this.availableVoices.forEach(voice => {
+                const isSelected = (this.selectedVoiceURI === voice.voiceURI || (!this.selectedVoiceURI && voice.default));
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between cursor-pointer transition-colors ${
+                    isSelected
+                        ? 'bg-primary/10 text-primary font-bold'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5'
+                }`;
+                btn.innerHTML = `<span class="truncate pr-2">${voice.name} (${voice.lang})</span>${isSelected ? '<span class="text-primary text-[10px]">✓</span>' : ''}`;
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    this.setVoice(voice.voiceURI);
+                    document.getElementById('voice-select-popover')?.classList.add('hidden');
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        if (settingsSelect) {
+            settingsSelect.innerHTML = '<option value="">Default System Voice</option>';
+            this.availableVoices.forEach(voice => {
+                const opt = document.createElement('option');
+                opt.value = voice.voiceURI;
+                opt.textContent = `${voice.name} (${voice.lang})${voice.default ? ' [Default]' : ''}`;
+                if (this.selectedVoiceURI === voice.voiceURI) opt.selected = true;
+                settingsSelect.appendChild(opt);
+            });
+        }
+
+        const activeVoice = this.getSelectedVoice();
+        if (voiceSelectLabel) {
+            voiceSelectLabel.textContent = activeVoice ? activeVoice.name.split(' ')[0] : 'Voice';
+        }
+    },
+
+    getSelectedVoice() {
+        if (!this.availableVoices.length) return null;
+        if (this.selectedVoiceURI) {
+            const found = this.availableVoices.find(v => v.voiceURI === this.selectedVoiceURI);
+            if (found) return found;
+        }
+        return this.availableVoices.find(v => v.default && v.lang.startsWith('en')) 
+            || this.availableVoices.find(v => v.lang.startsWith('en')) 
+            || this.availableVoices[0];
+    },
+
+    setVoice(voiceURI) {
+        this.selectedVoiceURI = voiceURI;
+        localStorage.setItem('biblia_voice_uri', voiceURI);
+        this.updateVoiceDropdownUI();
+        if (this.isPlaying && !this.isPaused) {
+            this.speakCurrentVerse();
+        }
+    },
+
+    setRate(newRate) {
+        this.rate = newRate;
+        localStorage.setItem('biblia_voice_rate', newRate);
+        const label = document.getElementById('voice-speed-label');
+        if (label) label.textContent = `${newRate}x`;
+        const settingsSpeed = document.getElementById('settings-voice-speed');
+        if (settingsSpeed) settingsSpeed.value = newRate.toString();
+        if (this.isPlaying && !this.isPaused) {
+            this.speakCurrentVerse();
+        }
+    },
+
+    setupMediaSession() {
+        if (!('mediaSession' in navigator)) return;
+
+        navigator.mediaSession.setActionHandler('play', () => {
+            this.resume();
+        });
+        navigator.mediaSession.setActionHandler('pause', () => {
+            this.pause();
+        });
+        navigator.mediaSession.setActionHandler('previoustrack', () => {
+            this.previousVerse();
+        });
+        navigator.mediaSession.setActionHandler('nexttrack', () => {
+            this.nextVerse();
+        });
+        navigator.mediaSession.setActionHandler('stop', () => {
+            this.stop();
+        });
+    },
+
+    async acquireWakeLock() {
+        try {
+            if ('wakeLock' in navigator && !this.wakeLock) {
+                this.wakeLock = await navigator.wakeLock.request('screen');
+                this.wakeLock.addEventListener('release', () => {
+                    this.wakeLock = null;
+                });
+            }
+        } catch (e) {
+            // WakeLock not supported or denied; continue gracefully
+        }
+    },
+
+    releaseWakeLock() {
+        if (this.wakeLock) {
+            try { this.wakeLock.release(); } catch (e) {}
+            this.wakeLock = null;
+        }
+    },
+
+    startWatchdog() {
+        this.stopWatchdog();
+        // Chromium SpeechSynthesis heartbeat workaround:
+        // Chrome stops speech if continuous utterance reaches ~15s without user event.
+        // Pausing & resuming resets the internal timer without cutting audio!
+        this.watchdogInterval = setInterval(() => {
+            if (this.isPlaying && !this.isPaused && window.speechSynthesis.speaking) {
+                this.watchdogTickCount++;
+                if (this.watchdogTickCount >= 4) {
+                    this.watchdogTickCount = 0;
+                    window.speechSynthesis.pause();
+                    window.speechSynthesis.resume();
+                }
+            }
+        }, 2000);
+    },
+
+    stopWatchdog() {
+        if (this.watchdogInterval) {
+            clearInterval(this.watchdogInterval);
+            this.watchdogInterval = null;
+        }
+        this.watchdogTickCount = 0;
+    },
+
+    parseVersesFromDOM(book, chapter) {
+        const verseElements = document.querySelectorAll(`[data-verse-ref^="${book} ${chapter}:"]`);
+        const verses = [];
+        verseElements.forEach(el => {
+            const ref = el.dataset.verseRef;
+            const match = ref.match(/:(\d+)$/);
+            const num = match ? match[1] : '';
+            let text = el.textContent.replace(/^\s*\d+\s*/, '').trim();
+            text = text.replace(/\[\d+\]/g, '').trim();
+            verses.push({ ref, num, text, el });
+        });
+        return verses;
+    },
+
+    async startChapter(book, chapter, startVerseNum = 1) {
+        if (!('speechSynthesis' in window)) {
+            showToast("Voice speech is not supported in this browser.");
+            return;
+        }
+
+        const activeHeading = document.querySelector(`.chapter-heading[data-book="${book}"][data-chapter="${chapter}"]`);
+        if (!activeHeading) {
+            this.isTransitioningChapter = true;
+            await loadChapter(book, chapter, 'clear', startVerseNum);
+            this.isTransitioningChapter = false;
+        }
+
+        this.currentBook = book;
+        this.currentChapter = chapter;
+        this.verses = this.parseVersesFromDOM(book, chapter);
+
+        if (!this.verses.length) {
+            showToast("No verses loaded to read.");
+            return;
+        }
+
+        let startIndex = this.verses.findIndex(v => parseInt(v.num) === parseInt(startVerseNum));
+        if (startIndex === -1) startIndex = 0;
+        this.currentVerseIndex = startIndex;
+
+        // Activate silent looping audio element to maintain background execution in PWA
+        this.initBackgroundAudioAnchor();
+        if (this.silentAudio) {
+            this.silentAudio.play().catch(() => {});
+        }
+
+        this.acquireWakeLock();
+        this.showPlayerBar();
+
+        this.isPlaying = true;
+        this.isPaused = false;
+        this.speakCurrentVerse();
+    },
+
+    startFromVerseRef(verseRef) {
+        const match = verseRef.match(/^(.*?)\s+(\d+):(\d+)/);
+        if (match) {
+            const [, book, chapter, verseNum] = match;
+            this.startChapter(book, chapter, parseInt(verseNum));
+        }
+    },
+
+    speakCurrentVerse() {
+        if (!this.isPlaying || this.isPaused) return;
+
+        if (this.currentVerseIndex >= this.verses.length) {
+            // Reached end of current chapter! Check next chapter in flatBible
+            const currentFlatIndex = flatBible.findIndex(b => b.book === this.currentBook && b.chapter === this.currentChapter);
+            if (currentFlatIndex !== -1 && currentFlatIndex < flatBible.length - 1) {
+                const nextChapter = flatBible[currentFlatIndex + 1];
+                showToast(`Continuing to ${nextChapter.book} ${nextChapter.chapter}...`);
+                this.startChapter(nextChapter.book, nextChapter.chapter, 1);
+            } else {
+                showToast("Finished reading.");
+                this.stop();
+            }
+            return;
+        }
+
+        const verse = this.verses[this.currentVerseIndex];
+        if (!verse) return;
+
+        window.speechSynthesis.cancel();
+
+        document.querySelectorAll('.verse-reading-active').forEach(el => {
+            el.classList.remove('verse-reading-active');
+        });
+
+        if (verse.el) {
+            verse.el.classList.add('verse-reading-active');
+            if (this.autoScroll) {
+                verse.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        this.updatePlayerUI(verse);
+
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: `${this.currentBook} ${this.currentChapter}:${verse.num}`,
+                artist: `${currentTranslationName || 'Biblia Sacra'} • Voice Reader`,
+                album: `${this.currentBook} (Holy Bible)`,
+                artwork: [
+                    { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+                    { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+                    { src: '/apple-touch-icon.png', sizes: '192x192', type: 'image/png' }
+                ]
+            });
+            navigator.mediaSession.playbackState = 'playing';
+        }
+
+        let speakText = verse.text;
+        if (this.currentVerseIndex === 0 && parseInt(verse.num) === 1) {
+            speakText = `${this.currentBook}, chapter ${this.currentChapter}. ${verse.text}`;
+        }
+
+        const utterance = new SpeechSynthesisUtterance(speakText);
+        utterance.rate = this.rate;
+        utterance.pitch = this.pitch;
+
+        const voice = this.getSelectedVoice();
+        if (voice) utterance.voice = voice;
+
+        utterance.onstart = () => {
+            this.startWatchdog();
+        };
+
+        utterance.onend = () => {
+            this.stopWatchdog();
+            if (this.isPlaying && !this.isPaused) {
+                this.currentVerseIndex++;
+                setTimeout(() => {
+                    this.speakCurrentVerse();
+                }, 180);
+            }
+        };
+
+        utterance.onerror = (e) => {
+            this.stopWatchdog();
+            if (e.error === 'interrupted' || e.error === 'canceled') return;
+            console.warn('SpeechSynthesis note:', e);
+            if (this.isPlaying && !this.isPaused) {
+                this.currentVerseIndex++;
+                setTimeout(() => this.speakCurrentVerse(), 300);
+            }
+        };
+
+        this.activeUtterance = utterance;
+        window.speechSynthesis.speak(utterance);
+    },
+
+    pause() {
+        if (!this.isPlaying) return;
+        this.isPaused = true;
+        window.speechSynthesis.pause();
+        if (this.silentAudio) {
+            this.silentAudio.pause();
+        }
+        this.releaseWakeLock();
+        this.stopWatchdog();
+        this.setPlayPauseIcon(false);
+
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'paused';
+        }
+    },
+
+    resume() {
+        if (!this.isPlaying) {
+            const heading = document.querySelector('.chapter-heading');
+            if (heading) {
+                this.startChapter(heading.dataset.book, heading.dataset.chapter, 1);
+            }
+            return;
+        }
+
+        this.isPaused = false;
+        if (this.silentAudio) {
+            this.silentAudio.play().catch(() => {});
+        }
+        this.acquireWakeLock();
+        this.setPlayPauseIcon(true);
+
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'playing';
+        }
+
+        if (window.speechSynthesis.paused) {
+            window.speechSynthesis.resume();
+            this.startWatchdog();
+        } else {
+            this.speakCurrentVerse();
+        }
+    },
+
+    togglePlayPause() {
+        if (!this.isPlaying) {
+            const heading = document.querySelector('.chapter-heading');
+            if (heading) {
+                this.startChapter(heading.dataset.book, heading.dataset.chapter, 1);
+            } else {
+                this.startChapter(lastRead.book, lastRead.chapter, 1);
+            }
+            return;
+        }
+
+        if (this.isPaused) {
+            this.resume();
+        } else {
+            this.pause();
+        }
+    },
+
+    previousVerse() {
+        if (!this.isPlaying) return;
+        if (this.currentVerseIndex > 0) {
+            this.currentVerseIndex--;
+            this.speakCurrentVerse();
+        } else {
+            const currentFlatIndex = flatBible.findIndex(b => b.book === this.currentBook && b.chapter === this.currentChapter);
+            if (currentFlatIndex > 0) {
+                const prevChapter = flatBible[currentFlatIndex - 1];
+                this.startChapter(prevChapter.book, prevChapter.chapter, 1);
+            }
+        }
+    },
+
+    nextVerse() {
+        if (!this.isPlaying) return;
+        this.currentVerseIndex++;
+        this.speakCurrentVerse();
+    },
+
+    stop() {
+        this.isPlaying = false;
+        this.isPaused = false;
+        window.speechSynthesis.cancel();
+        this.stopWatchdog();
+        this.releaseWakeLock();
+
+        if (this.silentAudio) {
+            this.silentAudio.pause();
+        }
+
+        document.querySelectorAll('.verse-reading-active').forEach(el => {
+            el.classList.remove('verse-reading-active');
+        });
+
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'none';
+        }
+
+        this.hidePlayerBar();
+    },
+
+    showPlayerBar() {
+        const bar = document.getElementById('voice-player-bar');
+        if (!bar) return;
+        bar.classList.remove('translate-y-32', 'opacity-0', 'pointer-events-none');
+        bar.classList.add('translate-y-0', 'opacity-100');
+    },
+
+    hidePlayerBar() {
+        const bar = document.getElementById('voice-player-bar');
+        if (!bar) return;
+        bar.classList.remove('translate-y-0', 'opacity-100');
+        bar.classList.add('translate-y-32', 'opacity-0', 'pointer-events-none');
+        document.getElementById('voice-select-popover')?.classList.add('hidden');
+    },
+
+    setPlayPauseIcon(isPlaying) {
+        const playIcon = document.getElementById('voice-player-play-icon');
+        const pauseIcon = document.getElementById('voice-player-pause-icon');
+        const wave = document.getElementById('voice-player-soundwave');
+        if (playIcon && pauseIcon) {
+            if (isPlaying) {
+                playIcon.classList.add('hidden');
+                pauseIcon.classList.remove('hidden');
+                if (wave) wave.classList.add('text-primary');
+            } else {
+                playIcon.classList.remove('hidden');
+                pauseIcon.classList.add('hidden');
+                if (wave) wave.classList.remove('text-primary');
+            }
+        }
+    },
+
+    updatePlayerUI(verse) {
+        const refEl = document.getElementById('voice-player-ref');
+        const progressEl = document.getElementById('voice-player-progress');
+        const versionEl = document.getElementById('voice-player-version');
+        const barProgress = document.getElementById('voice-player-bar-progress');
+
+        if (refEl) refEl.textContent = `${this.currentBook} ${this.currentChapter}:${verse.num}`;
+        if (progressEl) progressEl.textContent = `${this.currentVerseIndex + 1}/${this.verses.length}`;
+        if (versionEl) versionEl.textContent = currentTranslationName || 'Douay-Rheims';
+
+        if (barProgress && this.verses.length) {
+            const pct = Math.round(((this.currentVerseIndex + 1) / this.verses.length) * 100);
+            barProgress.style.width = `${pct}%`;
+        }
+
+        this.setPlayPauseIcon(true);
+    },
+
+    cycleSpeed() {
+        const speeds = [0.75, 1.0, 1.25, 1.5, 2.0];
+        let idx = speeds.indexOf(this.rate);
+        if (idx === -1) idx = 1;
+        const nextSpeed = speeds[(idx + 1) % speeds.length];
+        this.setRate(nextSpeed);
+    },
+
+    bindUI() {
+        const playBtn = document.getElementById('voice-player-play-btn');
+        if (playBtn) playBtn.addEventListener('click', () => this.togglePlayPause());
+
+        const prevBtn = document.getElementById('voice-player-prev-btn');
+        if (prevBtn) prevBtn.addEventListener('click', () => this.previousVerse());
+
+        const nextBtn = document.getElementById('voice-player-next-btn');
+        if (nextBtn) nextBtn.addEventListener('click', () => this.nextVerse());
+
+        const closeBtn = document.getElementById('voice-player-close-btn');
+        if (closeBtn) closeBtn.addEventListener('click', () => this.stop());
+
+        const speedBtn = document.getElementById('voice-speed-btn');
+        if (speedBtn) speedBtn.addEventListener('click', () => this.cycleSpeed());
+
+        const voiceSelectBtn = document.getElementById('voice-select-btn');
+        const voiceSelectPopover = document.getElementById('voice-select-popover');
+        if (voiceSelectBtn && voiceSelectPopover) {
+            voiceSelectBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                voiceSelectPopover.classList.toggle('hidden');
+            });
+            document.addEventListener('click', (e) => {
+                if (!voiceSelectPopover.contains(e.target) && e.target !== voiceSelectBtn) {
+                    voiceSelectPopover.classList.add('hidden');
+                }
+            });
+        }
+
+        const refEl = document.getElementById('voice-player-ref');
+        if (refEl) {
+            refEl.addEventListener('click', () => {
+                const currentVerse = this.verses[this.currentVerseIndex];
+                if (currentVerse && currentVerse.el) {
+                    currentVerse.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        }
+
+        const listenVerseBtn = document.getElementById('listen-verse-btn');
+        if (listenVerseBtn) {
+            listenVerseBtn.addEventListener('click', () => {
+                const book = highlightPopupContainer.dataset.currentBook;
+                const chapter = highlightPopupContainer.dataset.currentChapter;
+                const fromVerse = parseInt(document.getElementById('popup-verse-from').value) || 1;
+                hideHighlightPopup();
+                this.startChapter(book, chapter, fromVerse);
+            });
+        }
+
+        const desktopListenBtn = document.getElementById('desktop-chapter-listen-btn');
+        if (desktopListenBtn) {
+            desktopListenBtn.addEventListener('click', () => {
+                const heading = document.querySelector('.chapter-heading');
+                if (heading) {
+                    this.startChapter(heading.dataset.book, heading.dataset.chapter, 1);
+                } else {
+                    this.startChapter(lastRead.book, lastRead.chapter, 1);
+                }
+            });
+        }
+
+        const settingsVoiceSelect = document.getElementById('settings-voice-select');
+        if (settingsVoiceSelect) {
+            settingsVoiceSelect.addEventListener('change', (e) => {
+                this.setVoice(e.target.value);
+            });
+        }
+
+        const settingsVoiceSpeed = document.getElementById('settings-voice-speed');
+        if (settingsVoiceSpeed) {
+            settingsVoiceSpeed.addEventListener('change', (e) => {
+                this.setRate(parseFloat(e.target.value) || 1.0);
+            });
+        }
+
+        document.addEventListener('click', (e) => {
+            const listenActionBtn = e.target.closest('.chapter-listen-action-btn');
+            if (listenActionBtn) {
+                const book = listenActionBtn.dataset.book;
+                const chapter = listenActionBtn.dataset.chapter;
+                this.startChapter(book, chapter, 1);
+                return;
+            }
+
+            const sidebarVoiceBtn = e.target.closest('.open-voice-reader-btn-sidebar');
+            if (sidebarVoiceBtn) {
+                toggleMobileSidebar(false);
+                const heading = document.querySelector('.chapter-heading');
+                if (heading) {
+                    this.startChapter(heading.dataset.book, heading.dataset.chapter, 1);
+                } else {
+                    this.startChapter(lastRead.book, lastRead.chapter, 1);
+                }
+                return;
+            }
+        });
+
+        const speedLabel = document.getElementById('voice-speed-label');
+        if (speedLabel) speedLabel.textContent = `${this.rate}x`;
+    }
+};
+
 window.onload = async () => {
     document.body.dataset.activeTheme = currentActiveThemeId;
     updateFontDropdowns();
@@ -3447,6 +4094,15 @@ window.onload = async () => {
     updateFullThemesUI();
     updateSettingsPreview();
     updateOfflineSectionUI();
+    
+    // Initialize Voice Reader engine & check for PWA direct shortcut
+    voiceReader.init();
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('action') === 'listen') {
+        setTimeout(() => {
+            voiceReader.startChapter(lastRead.book || 'Genesis', lastRead.chapter || '1', 1);
+        }, 500);
+    }
     
     if (initialMessage.style.display !== 'none') {
         loadChapter(lastRead.book, lastRead.chapter, 'clear', lastRead.verse);

@@ -91,6 +91,18 @@
           "sizes": "192x192"
         }
       ]
+    },
+    {
+      "name": "Voice Reader",
+      "short_name": "Listen",
+      "description": "Listen to Scripture read aloud offline",
+      "url": "/?action=listen",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }
