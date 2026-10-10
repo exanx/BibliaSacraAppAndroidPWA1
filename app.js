@@ -390,6 +390,82 @@ const loaderHTML = `<div class="animate-spin rounded-full h-8 w-8 border-b-2 bor
 function hexToRgb(hex) { let r = 0, g = 0, b = 0; if (hex.length === 7) { r = parseInt(hex.substring(1, 3), 16); g = parseInt(hex.substring(3, 5), 16); b = parseInt(hex.substring(5, 7), 16); } return { r, g, b }; }
 function generateAccentVariants(hex) { const { r, g, b } = hexToRgb(hex); return { color: hex, hover: `#${Math.floor(r*0.8).toString(16).padStart(2,'0')}${Math.floor(g*0.8).toString(16).padStart(2,'0')}${Math.floor(b*0.8).toString(16).padStart(2,'0')}`, glow: `rgba(${r}, ${g}, ${b}, 0.3)` }; }
 function showToast(message) { const toast = document.getElementById('toast-notification'); toast.textContent = message; clearTimeout(toastTimeout); toast.classList.add('show'); toastTimeout = setTimeout(() => toast.classList.remove('show'), 3000); }
+function showConfirmDialog({
+    title = 'Confirm Action',
+    message = 'Are you sure you want to proceed?',
+    confirmText = 'Confirm',
+    cancelText = 'Cancel',
+    type = 'danger'
+} = {}) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('confirm-modal');
+        const box = document.getElementById('confirm-modal-box');
+        const titleEl = document.getElementById('confirm-modal-title');
+        const msgEl = document.getElementById('confirm-modal-message');
+        const confirmBtn = document.getElementById('confirm-modal-confirm-btn');
+        const cancelBtn = document.getElementById('confirm-modal-cancel-btn');
+        const iconContainer = document.getElementById('confirm-modal-icon-container');
+
+        if (!modal || !confirmBtn || !cancelBtn) {
+            resolve(true);
+            return;
+        }
+
+        if (titleEl) titleEl.textContent = title;
+        if (msgEl) msgEl.textContent = message;
+        confirmBtn.textContent = confirmText;
+        cancelBtn.textContent = cancelText;
+
+        if (type === 'warning') {
+            confirmBtn.className = 'bg-amber-600 hover:bg-amber-700 text-white font-semibold px-4 py-2 rounded-xl text-xs shadow-sm transition-all cursor-pointer';
+            if (iconContainer) {
+                iconContainer.className = 'w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400';
+            }
+        } else {
+            confirmBtn.className = 'bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-xl text-xs shadow-sm transition-all cursor-pointer';
+            if (iconContainer) {
+                iconContainer.className = 'w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400';
+            }
+        }
+
+        modal.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            if (box) {
+                box.classList.remove('scale-95', 'opacity-0');
+                box.classList.add('scale-100', 'opacity-100');
+            }
+        });
+
+        function cleanup(result) {
+            if (box) {
+                box.classList.remove('scale-100', 'opacity-100');
+                box.classList.add('scale-95', 'opacity-0');
+            }
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 150);
+
+            confirmBtn.removeEventListener('click', onConfirm);
+            cancelBtn.removeEventListener('click', onCancel);
+            modal.removeEventListener('click', onBackdrop);
+            document.removeEventListener('keydown', onKey);
+            resolve(result);
+        }
+
+        function onConfirm() { cleanup(true); }
+        function onCancel() { cleanup(false); }
+        function onBackdrop(e) { if (e.target === modal) cleanup(false); }
+        function onKey(e) {
+            if (e.key === 'Escape') cleanup(false);
+            if (e.key === 'Enter') cleanup(true);
+        }
+
+        confirmBtn.addEventListener('click', onConfirm);
+        cancelBtn.addEventListener('click', onCancel);
+        modal.addEventListener('click', onBackdrop);
+        document.addEventListener('keydown', onKey);
+    });
+}
 function updateSelectionText(book, chapter) { document.querySelectorAll('.current-selection-text').forEach(el => el.textContent = `${book} ${chapter}`); }
 function toggleMobileSidebar(show) { mobileSidebarContainer.classList.toggle('sidebar-closed-left', !show); }
 
@@ -614,8 +690,16 @@ function updateAuthUI(user) {
         currentUser = user; 
         authBtns.forEach(btn => { 
             btn.textContent = `Logout (${user.email})`; 
-            btn.className = 'auth-management-btn w-full bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20 transition-colors font-medium py-2.5 px-4 rounded-lg text-sm'; 
-            btn.onclick = () => {
+            btn.className = 'auth-management-btn w-full bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20 transition-colors font-medium py-2.5 px-4 rounded-lg text-sm cursor-pointer'; 
+            btn.onclick = async () => {
+                const confirmed = await showConfirmDialog({
+                    title: 'Sign Out of Account?',
+                    message: `Are you sure you want to sign out of ${user.email || 'your account'}? Local cached session data will be cleared to protect your privacy.`,
+                    confirmText: 'Sign Out',
+                    type: 'danger'
+                });
+                if (!confirmed) return;
+
                 auth.signOut().then(() => {
                     // On logout, explicitly clear local storage to prevent data bleed
                     localStorage.clear();
@@ -836,7 +920,15 @@ function renderCustomFontsList() {
     });
 }
 
-window.removeCustomFont = (fontToRemove) => {
+window.removeCustomFont = async (fontToRemove) => {
+    const confirmed = await showConfirmDialog({
+        title: 'Remove Custom Font?',
+        message: `Are you sure you want to remove the custom font "${fontToRemove}"? Any text styled with this font will revert to default typography.`,
+        confirmText: 'Remove Font',
+        type: 'danger'
+    });
+    if (!confirmed) return;
+
     customFonts = customFonts.filter(f => f !== fontToRemove);
     const id = `custom-font-${fontToRemove.replace(/\s+/g, '-')}`;
     const link = document.getElementById(id);
@@ -848,6 +940,7 @@ window.removeCustomFont = (fontToRemove) => {
     updateQuoteFontDropdown();
     renderCustomFontsList();
     saveSettings();
+    showToast(`Removed font "${fontToRemove}"`);
 };
 
 function updateTranslationDropdowns() {
@@ -907,7 +1000,17 @@ function renderCustomBiblesList() {
     });
 }
 
-window.removeCustomBible = (id) => {
+window.removeCustomBible = async (id) => {
+    const cb = customBibles.find(b => b.id === id);
+    const bibleName = cb ? cb.name : 'this translation';
+    const confirmed = await showConfirmDialog({
+        title: 'Delete Custom Bible?',
+        message: `Are you sure you want to delete "${bibleName}"? Any preferences using this translation will revert to the default translation.`,
+        confirmText: 'Delete Bible',
+        type: 'danger'
+    });
+    if (!confirmed) return;
+
     customBibles = customBibles.filter(cb => cb.id !== id);
     saveSettings();
     updateTranslationDropdowns();
@@ -916,6 +1019,7 @@ window.removeCustomBible = (id) => {
     if (currentTranslation === `custom_${id}`) {
         applyTranslation('drb');
     }
+    showToast(`Removed "${bibleName}"`);
 };
 
 async function fetchChapterHTML(book, chapter) {
@@ -1748,34 +1852,54 @@ async function updateQuoteLivePreview() {
     const previewText = document.getElementById('quote-preview-text');
     const previewRef = document.getElementById('quote-preview-ref');
     const previewBgImg = document.getElementById('quote-preview-bg-img');
+    const previewBgOverlay = document.getElementById('quote-preview-bg-overlay');
+    const previewQuoteMark = document.getElementById('quote-preview-quote-mark');
     if (!previewBox || !previewText || !previewRef) return;
     
     const bgColor = document.getElementById('quote-bg-color').value || '#111111';
     const textColor = document.getElementById('quote-text-color').value || '#FFFFFF';
     const fontName = quoteFontSelect.value || 'Crimson Pro';
     
+    const hex = bgColor.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16) || 0;
+    const g = parseInt(hex.substring(2, 4), 16) || 0;
+    const b = parseInt(hex.substring(4, 6), 16) || 0;
+    const isDarkBg = (0.2126 * r + 0.7152 * g + 0.0722 * b) < 128;
+    const refColor = isDarkBg ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.65)';
+    
     previewBox.style.backgroundColor = bgColor;
     previewBox.style.color = textColor;
     previewBox.style.fontFamily = `"${fontName}", serif`;
     
-    // Adjust container size per ratio
-    const isDesktop = window.innerWidth >= 1024;
-    if (currentQuoteAspectRatio === '1:1') {
-        previewBox.style.width = isDesktop ? '320px' : '260px';
-        previewBox.style.height = isDesktop ? '320px' : '260px';
-    } else if (currentQuoteAspectRatio === '9:16') {
-        previewBox.style.width = isDesktop ? '210px' : '180px';
-        previewBox.style.height = isDesktop ? '373px' : '320px';
-    } else if (currentQuoteAspectRatio === '16:9') {
-        previewBox.style.width = isDesktop ? '360px' : '280px';
-        previewBox.style.height = isDesktop ? '202px' : '158px';
+    if (previewQuoteMark) {
+        previewQuoteMark.style.fontFamily = `"${fontName}", serif`;
+        previewQuoteMark.style.color = isDarkBg ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.18)';
     }
     
-    if (selectedPexelsImageUrl) {
+    // Background photo handling with identical tint overlay to output canvas
+    if (selectedPexelsImageUrl && previewBgImg) {
         previewBgImg.style.backgroundImage = `url('${selectedPexelsImageUrl}')`;
         previewBgImg.classList.remove('hidden');
+        if (previewBgOverlay) {
+            previewBgOverlay.style.backgroundColor = `rgba(${r}, ${g}, ${b}, 0.72)`;
+            previewBgOverlay.classList.remove('hidden');
+        }
     } else {
-        previewBgImg.classList.add('hidden');
+        if (previewBgImg) previewBgImg.classList.add('hidden');
+        if (previewBgOverlay) previewBgOverlay.classList.add('hidden');
+    }
+    
+    // Adjust container size per ratio with proportional scaling
+    const isDesktop = window.innerWidth >= 1024;
+    if (currentQuoteAspectRatio === '1:1') {
+        previewBox.style.width = isDesktop ? '310px' : '260px';
+        previewBox.style.height = isDesktop ? '310px' : '260px';
+    } else if (currentQuoteAspectRatio === '9:16') {
+        previewBox.style.width = isDesktop ? '200px' : '175px';
+        previewBox.style.height = isDesktop ? '355px' : '310px';
+    } else if (currentQuoteAspectRatio === '16:9') {
+        previewBox.style.width = isDesktop ? '350px' : '280px';
+        previewBox.style.height = isDesktop ? '196px' : '158px';
     }
     
     const book = quoteBookSelect.value || 'John';
@@ -1788,11 +1912,38 @@ async function updateQuoteLivePreview() {
     const shortVersion = translationSelect && translationSelect.selectedOptions && translationSelect.selectedOptions[0] ? (translationSelect.selectedOptions[0].dataset.short || translationSelect.selectedOptions[0].dataset.name) : 'DRB';
     
     previewRef.textContent = `— ${book} ${chapter}:${verseRange} (${shortVersion})`;
+    previewRef.style.color = refColor;
     
     try {
         const text = await fetchQuoteVerseText(book, chapter, fromVerse, toVerse, translationSelect ? translationSelect.value : 'drb');
         if (text) {
-            previewText.textContent = `“${text}”`;
+            previewText.textContent = text.trim();
+            
+            // Dynamic text scaling for clean proportion across aspect ratios
+            const len = text.trim().length;
+            let fontSize = '14px';
+            let lineHeight = '1.45';
+            
+            if (currentQuoteAspectRatio === '16:9') {
+                if (len <= 80) { fontSize = isDesktop ? '13px' : '11px'; lineHeight = '1.4'; }
+                else if (len <= 160) { fontSize = isDesktop ? '11px' : '9.5px'; lineHeight = '1.3'; }
+                else if (len <= 260) { fontSize = isDesktop ? '9.5px' : '8.5px'; lineHeight = '1.25'; }
+                else { fontSize = isDesktop ? '8.5px' : '8px'; lineHeight = '1.2'; }
+            } else if (currentQuoteAspectRatio === '9:16') {
+                if (len <= 80) { fontSize = isDesktop ? '15px' : '13px'; lineHeight = '1.5'; }
+                else if (len <= 160) { fontSize = isDesktop ? '13px' : '11.5px'; lineHeight = '1.45'; }
+                else if (len <= 260) { fontSize = isDesktop ? '11.5px' : '10.5px'; lineHeight = '1.35'; }
+                else { fontSize = isDesktop ? '10px' : '9.5px'; lineHeight = '1.3'; }
+            } else {
+                // 1:1
+                if (len <= 80) { fontSize = isDesktop ? '15px' : '13px'; lineHeight = '1.5'; }
+                else if (len <= 160) { fontSize = isDesktop ? '13px' : '11.5px'; lineHeight = '1.4'; }
+                else if (len <= 260) { fontSize = isDesktop ? '11px' : '10px'; lineHeight = '1.35'; }
+                else { fontSize = isDesktop ? '10px' : '9px'; lineHeight = '1.25'; }
+            }
+            
+            previewText.style.fontSize = fontSize;
+            previewText.style.lineHeight = lineHeight;
         }
     } catch (e) {}
 }
@@ -2118,41 +2269,66 @@ function saveHighlight() {
     hideHighlightPopup(); loadChapter(lastRead.book, lastRead.chapter, 'clear', lastRead.verse);
 }
 
-function removeHighlight() { 
+async function removeHighlight() { 
     const originalRef = highlightPopupContainer.dataset.originalRef; 
     if (originalRef) {
+        const confirmed = await showConfirmDialog({
+            title: 'Remove Highlight?',
+            message: `Are you sure you want to remove the highlight and note for ${originalRef}?`,
+            confirmText: 'Remove Highlight',
+            type: 'danger'
+        });
+        if (!confirmed) return;
+
         highlights[originalRef] = { deleted: true, updatedAt: Date.now() };
         pushToCloud({ [`highlights.${originalRef}`]: highlights[originalRef] });
         saveToLocalDB();
+        showToast(`Highlight removed for ${originalRef}`);
     }
     hideHighlightPopup(); loadChapter(lastRead.book, lastRead.chapter, 'clear', lastRead.verse);
 }
 
-function resetSettings() {
-    if(confirm('Reset appearance and typography settings to default?')) {
-        currentFontSize = 1.125;
-        document.documentElement.style.setProperty('--font-size-base', `${currentFontSize}rem`);
-        applyLineSpacing(1.75, true);
-        applyFontFamily('Inter', true);
-        applyFontWeight(false, true);
-        applyContentWidth(100, true);
-        applyCustomColors(null, null, true);
-        applyAccentColor({ color: '#4f46e5', hover: '#4338ca', glow: 'rgba(79,70,229,0.3)' }, true);
-        applyTheme('dark', true);
-        document.querySelectorAll('.theme-preset-select').forEach(sel => sel.value = 'custom');
-        
-        saveSettings();
-        showToast('Settings reset to default');
-    }
+async function resetSettings() {
+    const confirmed = await showConfirmDialog({
+        title: 'Reset Settings to Default?',
+        message: 'This will restore typography, font size, themes, and reading layout back to default settings. Your bookmarks and notes will remain intact.',
+        confirmText: 'Reset Settings',
+        type: 'warning'
+    });
+    if (!confirmed) return;
+
+    currentFontSize = 1.125;
+    document.documentElement.style.setProperty('--font-size-base', `${currentFontSize}rem`);
+    applyLineSpacing(1.75, true);
+    applyFontFamily('Inter', true);
+    applyFontWeight(false, true);
+    applyContentWidth(100, true);
+    applyCustomColors(null, null, true);
+    applyAccentColor({ color: '#4f46e5', hover: '#4338ca', glow: 'rgba(79,70,229,0.3)' }, true);
+    applyTheme('dark', true);
+    document.querySelectorAll('.theme-preset-select').forEach(sel => sel.value = 'custom');
+    
+    saveSettings();
+    showToast('Settings reset to default');
 }
 
 async function resetApp() { 
-    if (confirm('Erase all local & synced data and restore factory settings?')) { 
-        if (currentUser) await window.firebase.setDoc(window.firebase.doc(window.firebase.db, "users", currentUser.uid), {}); 
-        localStorage.clear();
-        indexedDB.deleteDatabase("SanctaBibliaDB");
-        window.location.reload(); 
-    } 
+    const confirmed = await showConfirmDialog({
+        title: 'Factory Reset All Data?',
+        message: 'This will permanently erase all local and cloud data, bookmarks, highlights, offline downloaded Bibles, and custom settings. This cannot be undone.',
+        confirmText: 'Erase Everything',
+        type: 'danger'
+    });
+    if (!confirmed) return;
+
+    if (currentUser && window.firebase && window.firebase.db) {
+        try {
+            await window.firebase.setDoc(window.firebase.doc(window.firebase.db, "users", currentUser.uid), {}); 
+        } catch (e) {}
+    }
+    localStorage.clear();
+    indexedDB.deleteDatabase("SanctaBibliaDB");
+    window.location.reload(); 
 }
 
 function populateCategorySelect(selectEl, selectedCategory) { 
@@ -2476,8 +2652,16 @@ function renderBookmarks() {
     });
 }
 
-function deleteBookmark(ref) {
+async function deleteBookmark(ref) {
     if (!bookmarks[ref]) return;
+    const confirmed = await showConfirmDialog({
+        title: 'Remove Bookmark?',
+        message: `Are you sure you want to remove ${ref} from your bookmarks?`,
+        confirmText: 'Remove Bookmark',
+        type: 'danger'
+    });
+    if (!confirmed) return;
+
     bookmarks[ref] = { deleted: true, updatedAt: Date.now() };
     pushToCloud({ [`bookmarks.${ref}`]: bookmarks[ref] });
     saveToLocalDB();
@@ -2762,9 +2946,20 @@ window.onload = async () => {
 
     const deleteOfflineBtn = document.getElementById('delete-offline-btn');
     if (deleteOfflineBtn) {
-        deleteOfflineBtn.addEventListener('click', () => {
-            const version = document.getElementById('offline-version-select').value;
-            deleteTranslationOffline(version);
+        deleteOfflineBtn.addEventListener('click', async () => {
+            const versionSelect = document.getElementById('offline-version-select');
+            const version = versionSelect.value;
+            const opt = versionSelect.querySelector(`option[value="${version}"]`);
+            const name = opt ? (opt.dataset.name || opt.textContent) : version;
+            const confirmed = await showConfirmDialog({
+                title: 'Clear Offline Translation?',
+                message: `Are you sure you want to remove the downloaded offline copy of "${name}"? You will need an active internet connection to read this translation again.`,
+                confirmText: 'Clear Cache',
+                type: 'danger'
+            });
+            if (confirmed) {
+                deleteTranslationOffline(version);
+            }
         });
     }
 
@@ -2958,6 +3153,26 @@ window.onload = async () => {
         });
     });
 
+    // Quote Live Preview Info Note Popover (Click on mobile, Hover on PC)
+    const quotePreviewInfoBtn = document.getElementById('quote-preview-info-btn');
+    const quotePreviewInfoPopover = document.getElementById('quote-preview-info-popover');
+    if (quotePreviewInfoBtn && quotePreviewInfoPopover) {
+        quotePreviewInfoBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isVisible = quotePreviewInfoPopover.classList.contains('!opacity-100');
+            if (isVisible) {
+                quotePreviewInfoPopover.classList.remove('!opacity-100', '!visible', '!pointer-events-auto');
+            } else {
+                quotePreviewInfoPopover.classList.add('!opacity-100', '!visible', '!pointer-events-auto');
+            }
+        });
+        document.addEventListener('click', (e) => {
+            if (quotePreviewInfoPopover && !quotePreviewInfoBtn.contains(e.target)) {
+                quotePreviewInfoPopover.classList.remove('!opacity-100', '!visible', '!pointer-events-auto');
+            }
+        });
+    }
+
     // Palette Presets Chips
     document.querySelectorAll('.quote-palette-chip').forEach(chip => {
         chip.addEventListener('click', (e) => {
@@ -3040,11 +3255,19 @@ window.onload = async () => {
 
     document.getElementById('highlights-search').addEventListener('input', (e) => { currentHighlightsSearch = e.target.value; renderHighlights(); });
     
-    highlightsContent.addEventListener('click', e => {
+    highlightsContent.addEventListener('click', async e => {
         const deleteCardBtn = e.target.closest('.delete-highlight-card-btn');
         if (deleteCardBtn) {
             const ref = deleteCardBtn.dataset.ref;
             if (highlights[ref]) {
+                const confirmed = await showConfirmDialog({
+                    title: 'Delete Highlight & Note?',
+                    message: `Are you sure you want to permanently delete the highlight and reflection note for ${ref}?`,
+                    confirmText: 'Delete',
+                    type: 'danger'
+                });
+                if (!confirmed) return;
+
                 highlights[ref] = { deleted: true, updatedAt: Date.now() };
                 pushToCloud({ [`highlights.${ref}`]: highlights[ref] });
                 saveToLocalDB();
