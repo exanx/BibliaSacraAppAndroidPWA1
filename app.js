@@ -233,19 +233,7 @@ const FULL_THEMES = {
 const THEME_PRESETS = FULL_THEMES;
 let currentActiveThemeId = 'amoled_black';
 let currentThemeCategory = 'main';
-let currentGlowingBorder = 'disabled';
 let currentLiveEffect = 'theme_default';
-
-const GLOWING_BORDER_NAMES = {
-    disabled: 'Disabled (Off)',
-    divine_gold: 'Divine Gold',
-    living_waters: 'Living Waters',
-    holy_fire: 'Holy Fire',
-    royal_amethyst: 'Royal Amethyst',
-    covenant_prism: 'Covenant Prism',
-    emerald_life: 'Living Emerald',
-    pure_light: 'Pure Moonlight'
-};
 
 const LIVE_EFFECT_NAMES = {
     theme_default: 'Theme Default',
@@ -259,51 +247,6 @@ const LIVE_EFFECT_NAMES = {
     royal_aurora: 'Royal Aurora',
     morning_dew: 'Dawn Radiance'
 };
-
-function applyGlowingBorder(borderId = 'disabled', skipSave = false) {
-    currentGlowingBorder = borderId;
-    const container = document.getElementById('reading-container');
-    if (!container) return;
-
-    container.classList.remove(
-        'border-glow-active',
-        'border-glow-divine_gold',
-        'border-glow-living_waters',
-        'border-glow-holy_fire',
-        'border-glow-royal_amethyst',
-        'border-glow-covenant_prism',
-        'border-glow-emerald_life',
-        'border-glow-pure_light'
-    );
-
-    if (borderId && borderId !== 'disabled') {
-        container.classList.add('border-glow-active', `border-glow-${borderId}`);
-    }
-
-    const badge = document.getElementById('active-glowing-border-badge');
-    if (badge) {
-        badge.textContent = GLOWING_BORDER_NAMES[borderId] || 'Disabled';
-        badge.classList.toggle('text-primary', borderId !== 'disabled');
-        badge.classList.toggle('text-gray-400', borderId === 'disabled');
-    }
-
-    document.querySelectorAll('.glowing-border-option-btn').forEach(btn => {
-        const isCur = btn.dataset.border === borderId;
-        btn.classList.toggle('active', isCur);
-        btn.classList.toggle('ring-2', isCur);
-        btn.classList.toggle('ring-primary', isCur);
-        btn.classList.toggle('border-primary', isCur);
-    });
-
-    if (!skipSave) {
-        saveSettings();
-        if (borderId !== 'disabled') {
-            showToast(`Glowing border "${GLOWING_BORDER_NAMES[borderId]}" active`);
-        } else {
-            showToast('Glowing border disabled');
-        }
-    }
-}
 
 function applyLiveEffect(effectId = 'theme_default', skipSave = false) {
     currentLiveEffect = effectId;
@@ -488,7 +431,6 @@ function buildSettingsObject() {
         accentColor: currentAccentColor,
         theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
         activeThemeId: currentActiveThemeId,
-        glowingBorder: currentGlowingBorder || 'disabled',
         liveEffect: currentLiveEffect || 'theme_default',
         customBibles,
         customFonts,
@@ -528,10 +470,7 @@ function applyLoadedSettings(s, skipSave = false) {
     document.body.dataset.activeTheme = currentActiveThemeId;
     updateFullThemesUI();
     
-    // Apply glowing border & live atmospheric effect
-    if (s.glowingBorder) applyGlowingBorder(s.glowingBorder, true);
-    else applyGlowingBorder('disabled', true);
-
+    // Apply live atmospheric effect
     if (s.liveEffect) applyLiveEffect(s.liveEffect, true);
     else applyLiveEffect('theme_default', true);
 
@@ -2748,14 +2687,6 @@ window.onload = async () => {
         btn.addEventListener('click', (e) => {
             const effect = e.currentTarget.dataset.effect;
             applyLiveEffect(effect);
-        });
-    });
-
-    // Glowing Reading Area Border selector
-    document.querySelectorAll('.glowing-border-option-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const border = e.currentTarget.dataset.border;
-            applyGlowingBorder(border);
         });
     });
     
