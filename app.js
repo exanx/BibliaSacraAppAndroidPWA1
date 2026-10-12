@@ -2855,9 +2855,10 @@ const voiceReader = {
     availableVoices: [],
     activeUtterance: null,
     silentAudio: null,
+    silentAudioUrl: null,
     wakeLock: null,
-    watchdogInterval: null,
-    watchdogTickCount: 0,
+    nextVerseTimeout: null,
+    consecutiveErrors: 0,
     autoScroll: true,
 
     init() {
@@ -2865,7 +2866,6 @@ const voiceReader = {
         if (savedRate) this.rate = parseFloat(savedRate) || 1.0;
         this.selectedVoiceURI = localStorage.getItem('biblia_voice_uri') || null;
 
-        this.initBackgroundAudioAnchor();
         this.loadVoices();
 
         if ('speechSynthesis' in window) {
@@ -2876,13 +2876,15 @@ const voiceReader = {
 
         this.setupMediaSession();
 
-        // Keep background audio active when tab is minimized or device is locked in PWA mode
+        // Safe background audio maintenance for PWA mode
         document.addEventListener('visibilitychange', () => {
             if (this.isPlaying && !this.isPaused) {
                 if (document.hidden) {
                     if (this.silentAudio && this.silentAudio.paused) {
                         this.silentAudio.play().catch(() => {});
                     }
+                } else {
+                    this.acquireWakeLock();
                 }
             }
         });
@@ -2890,19 +2892,63 @@ const voiceReader = {
         this.bindUI();
     },
 
+    // Generates a valid 5-second silent PCM WAV blob so the audio pipeline never loops in a 0ms busy loop
+    createSafeSilentAudioBlob() {
+        try {
+            const sampleRate = 8000;
+            const durationSec = 5;
+            const numSamples = sampleRate * durationSec;
+            const buffer = new ArrayBuffer(44 + numSamples);
+            const view = new DataView(buffer);
+
+            const writeString = (offset, str) => {
+                for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+            };
+
+            writeString(0, 'RIFF');
+            view.setUint32(4, 36 + numSamples, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true); // PCM format
+            view.setUint16(22, 1, true); // Mono channel
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate, true); // Byte rate
+            view.setUint16(32, 1, true); // Block align
+            view.setUint16(34, 8, true); // 8-bit samples
+            writeString(36, 'data');
+            view.setUint32(40, numSamples, true);
+
+            // 128 is silence midpoint for unsigned 8-bit PCM
+            const bytes = new Uint8Array(buffer, 44, numSamples);
+            bytes.fill(128);
+
+            const blob = new Blob([buffer], { type: 'audio/wav' });
+            return URL.createObjectURL(blob);
+        } catch (e) {
+            console.warn('Silent audio blob creation note:', e);
+            return null;
+        }
+    },
+
     initBackgroundAudioAnchor() {
         if (this.silentAudio) return;
-        // Silent looping WAV audio anchor: keeps the mobile OS audio session and speech synthesis active in background
-        const audio = document.createElement('audio');
-        audio.id = 'bg-reading-silent-anchor';
-        audio.loop = true;
-        audio.setAttribute('playsinline', '');
-        audio.setAttribute('webkit-playsinline', '');
-        // Minimal valid 16-bit PCM silent WAV base64
-        audio.src = 'data:audio/wav;base64,UklGRjIAAABXQVZFZm10IBIAAAABAAEAQB8AAEAfAAABAAgAAABmYWN0BAAAAAAAAABkYXRhAAAAAA==';
-        audio.volume = 0.01;
-        document.body.appendChild(audio);
-        this.silentAudio = audio;
+        try {
+            this.silentAudioUrl = this.createSafeSilentAudioBlob();
+            if (!this.silentAudioUrl) return;
+
+            const audio = document.createElement('audio');
+            audio.id = 'bg-reading-silent-anchor';
+            audio.loop = true;
+            audio.setAttribute('playsinline', '');
+            audio.setAttribute('webkit-playsinline', '');
+            audio.src = this.silentAudioUrl;
+            audio.volume = 0.01;
+            document.body.appendChild(audio);
+            this.silentAudio = audio;
+        } catch (e) {
+            console.warn('Background audio anchor initialization note:', e);
+        }
     },
 
     loadVoices() {
@@ -2957,6 +3003,9 @@ const voiceReader = {
     },
 
     getSelectedVoice() {
+        if (!this.availableVoices.length && ('speechSynthesis' in window)) {
+            this.availableVoices = window.speechSynthesis.getVoices() || [];
+        }
         if (!this.availableVoices.length) return null;
         if (this.selectedVoiceURI) {
             const found = this.availableVoices.find(v => v.voiceURI === this.selectedVoiceURI);
@@ -3028,31 +3077,6 @@ const voiceReader = {
         }
     },
 
-    startWatchdog() {
-        this.stopWatchdog();
-        // Chromium SpeechSynthesis heartbeat workaround:
-        // Chrome stops speech if continuous utterance reaches ~15s without user event.
-        // Pausing & resuming resets the internal timer without cutting audio!
-        this.watchdogInterval = setInterval(() => {
-            if (this.isPlaying && !this.isPaused && window.speechSynthesis.speaking) {
-                this.watchdogTickCount++;
-                if (this.watchdogTickCount >= 4) {
-                    this.watchdogTickCount = 0;
-                    window.speechSynthesis.pause();
-                    window.speechSynthesis.resume();
-                }
-            }
-        }, 2000);
-    },
-
-    stopWatchdog() {
-        if (this.watchdogInterval) {
-            clearInterval(this.watchdogInterval);
-            this.watchdogInterval = null;
-        }
-        this.watchdogTickCount = 0;
-    },
-
     parseVersesFromDOM(book, chapter) {
         const verseElements = document.querySelectorAll(`[data-verse-ref^="${book} ${chapter}:"]`);
         const verses = [];
@@ -3086,16 +3110,18 @@ const voiceReader = {
 
         if (!this.verses.length) {
             showToast("No verses loaded to read.");
+            this.stop();
             return;
         }
 
         let startIndex = this.verses.findIndex(v => parseInt(v.num) === parseInt(startVerseNum));
         if (startIndex === -1) startIndex = 0;
         this.currentVerseIndex = startIndex;
+        this.consecutiveErrors = 0;
 
-        // Activate silent looping audio element to maintain background execution in PWA
+        // Initialize safe background audio anchor for PWA
         this.initBackgroundAudioAnchor();
-        if (this.silentAudio) {
+        if (this.silentAudio && this.silentAudio.paused) {
             this.silentAudio.play().catch(() => {});
         }
 
@@ -3118,6 +3144,12 @@ const voiceReader = {
     speakCurrentVerse() {
         if (!this.isPlaying || this.isPaused) return;
 
+        // Clear any pending verse transition timer to avoid parallel speech loops
+        if (this.nextVerseTimeout) {
+            clearTimeout(this.nextVerseTimeout);
+            this.nextVerseTimeout = null;
+        }
+
         if (this.currentVerseIndex >= this.verses.length) {
             // Reached end of current chapter! Check next chapter in flatBible
             const currentFlatIndex = flatBible.findIndex(b => b.book === this.currentBook && b.chapter === this.currentChapter);
@@ -3135,7 +3167,18 @@ const voiceReader = {
         const verse = this.verses[this.currentVerseIndex];
         if (!verse) return;
 
-        window.speechSynthesis.cancel();
+        // CRITICAL FIX: Safely nullify previous utterance handlers before cancel()
+        // Prevents cancel() from firing onend/onerror and spawning runaway recursive loops!
+        if (this.activeUtterance) {
+            this.activeUtterance.onstart = null;
+            this.activeUtterance.onend = null;
+            this.activeUtterance.onerror = null;
+            this.activeUtterance = null;
+        }
+
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+        }
 
         document.querySelectorAll('.verse-reading-active').forEach(el => {
             el.classList.remove('verse-reading-active');
@@ -3176,27 +3219,32 @@ const voiceReader = {
         const voice = this.getSelectedVoice();
         if (voice) utterance.voice = voice;
 
-        utterance.onstart = () => {
-            this.startWatchdog();
-        };
-
         utterance.onend = () => {
-            this.stopWatchdog();
+            this.consecutiveErrors = 0;
             if (this.isPlaying && !this.isPaused) {
                 this.currentVerseIndex++;
-                setTimeout(() => {
+                if (this.nextVerseTimeout) clearTimeout(this.nextVerseTimeout);
+                this.nextVerseTimeout = setTimeout(() => {
                     this.speakCurrentVerse();
-                }, 180);
+                }, 120);
             }
         };
 
         utterance.onerror = (e) => {
-            this.stopWatchdog();
             if (e.error === 'interrupted' || e.error === 'canceled') return;
-            console.warn('SpeechSynthesis note:', e);
+            console.warn('SpeechSynthesis error:', e.error);
+            this.consecutiveErrors = (this.consecutiveErrors || 0) + 1;
+            if (this.consecutiveErrors >= 3) {
+                showToast("Voice reading paused: speech engine error.");
+                this.stop();
+                return;
+            }
             if (this.isPlaying && !this.isPaused) {
                 this.currentVerseIndex++;
-                setTimeout(() => this.speakCurrentVerse(), 300);
+                if (this.nextVerseTimeout) clearTimeout(this.nextVerseTimeout);
+                this.nextVerseTimeout = setTimeout(() => {
+                    this.speakCurrentVerse();
+                }, 300);
             }
         };
 
@@ -3207,12 +3255,27 @@ const voiceReader = {
     pause() {
         if (!this.isPlaying) return;
         this.isPaused = true;
-        window.speechSynthesis.pause();
+
+        if (this.nextVerseTimeout) {
+            clearTimeout(this.nextVerseTimeout);
+            this.nextVerseTimeout = null;
+        }
+
+        if (this.activeUtterance) {
+            this.activeUtterance.onstart = null;
+            this.activeUtterance.onend = null;
+            this.activeUtterance.onerror = null;
+            this.activeUtterance = null;
+        }
+
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+        }
+
         if (this.silentAudio) {
-            this.silentAudio.pause();
+            try { this.silentAudio.pause(); } catch (e) {}
         }
         this.releaseWakeLock();
-        this.stopWatchdog();
         this.setPlayPauseIcon(false);
 
         if ('mediaSession' in navigator) {
@@ -3225,12 +3288,14 @@ const voiceReader = {
             const heading = document.querySelector('.chapter-heading');
             if (heading) {
                 this.startChapter(heading.dataset.book, heading.dataset.chapter, 1);
+            } else {
+                this.startChapter(lastRead.book, lastRead.chapter, 1);
             }
             return;
         }
 
         this.isPaused = false;
-        if (this.silentAudio) {
+        if (this.silentAudio && this.silentAudio.paused) {
             this.silentAudio.play().catch(() => {});
         }
         this.acquireWakeLock();
@@ -3240,12 +3305,7 @@ const voiceReader = {
             navigator.mediaSession.playbackState = 'playing';
         }
 
-        if (window.speechSynthesis.paused) {
-            window.speechSynthesis.resume();
-            this.startWatchdog();
-        } else {
-            this.speakCurrentVerse();
-        }
+        this.speakCurrentVerse();
     },
 
     togglePlayPause() {
@@ -3289,12 +3349,31 @@ const voiceReader = {
     stop() {
         this.isPlaying = false;
         this.isPaused = false;
-        window.speechSynthesis.cancel();
-        this.stopWatchdog();
+        this.consecutiveErrors = 0;
+
+        if (this.nextVerseTimeout) {
+            clearTimeout(this.nextVerseTimeout);
+            this.nextVerseTimeout = null;
+        }
+
+        if (this.activeUtterance) {
+            this.activeUtterance.onstart = null;
+            this.activeUtterance.onend = null;
+            this.activeUtterance.onerror = null;
+            this.activeUtterance = null;
+        }
+
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+        }
+
         this.releaseWakeLock();
 
         if (this.silentAudio) {
-            this.silentAudio.pause();
+            try {
+                this.silentAudio.pause();
+                this.silentAudio.currentTime = 0;
+            } catch (e) {}
         }
 
         document.querySelectorAll('.verse-reading-active').forEach(el => {

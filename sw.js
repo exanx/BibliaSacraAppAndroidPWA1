@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v1.0.2';
+const CACHE_VERSION = 'v1.0.3';
 const APP_CACHE = `biblia-app-${CACHE_VERSION}`;
 const DATA_CACHE = `biblia-data-${CACHE_VERSION}`;
 
