@@ -469,7 +469,188 @@ function showConfirmDialog({
 function updateSelectionText(book, chapter) { document.querySelectorAll('.current-selection-text').forEach(el => el.textContent = `${book} ${chapter}`); }
 function toggleMobileSidebar(show) { mobileSidebarContainer.classList.toggle('sidebar-closed-left', !show); }
 
-// --- V2 CLOUD SYNC & LOCAL DATA ENGINE --- //
+// --- ULTRA-LOW QUOTA CLOUD SYNC & LOCAL DATA ENGINE --- //
+
+const dirtySyncSections = new Set();
+let cloudFlushTimer = null;
+let isFlushingCloud = false;
+let lastSyncedTime = null;
+let lastCloudReadTime = 0;
+let lastReadSyncTimer = null;
+const CLOUD_FLUSH_DELAY = 10000; // 10s idle debounce batches all changes into 1 document write
+const CLOUD_READ_THROTTLE = 15 * 60 * 1000; // 15 mins minimum between passive reads on tab focus
+
+function updateSyncStatusUI(status, detail) {
+    const badge = document.getElementById('cloud-sync-status-badge');
+    const lastTimeEl = document.getElementById('cloud-sync-last-time');
+    const controls = document.getElementById('cloud-sync-controls');
+    const userLabel = document.getElementById('cloud-sync-user-label');
+
+    if (!currentUser) {
+        if (badge) {
+            badge.className = 'inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-gray-400';
+            badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span><span>Local Only</span>';
+        }
+        if (controls) controls.classList.add('hidden');
+        return;
+    }
+
+    if (controls) controls.classList.remove('hidden');
+    if (userLabel) {
+        userLabel.textContent = currentUser.email || 'Account';
+    }
+
+    if (status === 'syncing') {
+        if (badge) {
+            badge.className = 'inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400';
+            badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span><span>Syncing...</span>';
+        }
+    } else if (status === 'pending') {
+        const count = dirtySyncSections.size;
+        if (badge) {
+            badge.className = 'inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400';
+            badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span><span>${count} unsaved section${count === 1 ? '' : 's'}</span>`;
+        }
+    } else if (status === 'synced') {
+        if (badge) {
+            badge.className = 'inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400';
+            badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span><span>Synced</span>';
+        }
+        if (lastTimeEl) {
+            const timeStr = lastSyncedTime ? new Date(lastSyncedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now';
+            lastTimeEl.textContent = `Last synced: ${timeStr}`;
+        }
+    } else if (status === 'error') {
+        if (badge) {
+            badge.className = 'inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5 rounded-full bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400';
+            badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span><span>Offline / Pending</span>';
+        }
+        if (lastTimeEl && detail) {
+            lastTimeEl.textContent = detail;
+        }
+    } else if (status === 'offline') {
+        if (badge) {
+            badge.className = 'inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-gray-400';
+            badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span><span>Local Only</span>';
+        }
+        if (controls) controls.classList.add('hidden');
+    }
+}
+
+function scheduleCloudFlush(immediate = false) {
+    if (!currentUser || !window.firebase?.db) return;
+    
+    updateSyncStatusUI('pending');
+
+    if (cloudFlushTimer) {
+        clearTimeout(cloudFlushTimer);
+        cloudFlushTimer = null;
+    }
+
+    if (immediate) {
+        flushPendingCloudUpdates();
+    } else {
+        cloudFlushTimer = setTimeout(() => {
+            flushPendingCloudUpdates();
+        }, CLOUD_FLUSH_DELAY);
+    }
+}
+
+async function flushPendingCloudUpdates() {
+    if (!currentUser || !window.firebase?.db || isFlushingCloud) return;
+    if (dirtySyncSections.size === 0) {
+        updateSyncStatusUI('synced');
+        return;
+    }
+
+    if (cloudFlushTimer) {
+        clearTimeout(cloudFlushTimer);
+        cloudFlushTimer = null;
+    }
+
+    isFlushingCloud = true;
+    updateSyncStatusUI('syncing');
+
+    // Build single coalesced document payload containing only dirty sections
+    const payload = {};
+    if (dirtySyncSections.has('settings')) payload.settings = buildSettingsObject();
+    if (dirtySyncSections.has('highlights')) payload.highlights = highlights;
+    if (dirtySyncSections.has('bookmarks')) payload.bookmarks = bookmarks;
+    if (dirtySyncSections.has('categories')) payload.categories = categories;
+    if (dirtySyncSections.has('lastRead')) payload.lastRead = lastRead;
+
+    const sendingSections = new Set(dirtySyncSections);
+
+    try {
+        await window.firebase.setDoc(
+            window.firebase.doc(window.firebase.db, "users", currentUser.uid),
+            payload,
+            { merge: true }
+        );
+
+        for (const sec of sendingSections) {
+            dirtySyncSections.delete(sec);
+        }
+
+        lastSyncedTime = Date.now();
+        isFlushingCloud = false;
+
+        if (dirtySyncSections.size > 0) {
+            scheduleCloudFlush(false);
+        } else {
+            updateSyncStatusUI('synced');
+        }
+    } catch (err) {
+        console.error("Cloud batch write failed:", err);
+        isFlushingCloud = false;
+        updateSyncStatusUI('error', 'Offline / sync queued');
+    }
+}
+
+async function pullFromCloud(force = false) {
+    if (!currentUser || !window.firebase?.db || !window.firebase?.getDoc) return;
+
+    const now = Date.now();
+    if (!force && (now - lastCloudReadTime < CLOUD_READ_THROTTLE)) {
+        return; // Conserve read quota
+    }
+
+    updateSyncStatusUI('syncing');
+
+    try {
+        const docRef = window.firebase.doc(window.firebase.db, "users", currentUser.uid);
+        const snap = await window.firebase.getDoc(docRef);
+        lastCloudReadTime = Date.now();
+
+        if (snap.exists()) {
+            const cloudData = snap.data();
+            smartMerge(cloudData);
+        } else {
+            // First time login - seed initial cloud document in 1 batched write
+            dirtySyncSections.add('settings');
+            dirtySyncSections.add('highlights');
+            dirtySyncSections.add('bookmarks');
+            dirtySyncSections.add('categories');
+            dirtySyncSections.add('lastRead');
+            scheduleCloudFlush(true);
+        }
+
+        lastSyncedTime = Date.now();
+        updateSyncStatusUI('synced');
+    } catch (err) {
+        console.error("Cloud pull error:", err);
+        updateSyncStatusUI('error', 'Could not read cloud');
+    }
+}
+
+function scheduleLastReadSync() {
+    if (!currentUser) return;
+    if (lastReadSyncTimer) clearTimeout(lastReadSyncTimer);
+    lastReadSyncTimer = setTimeout(() => {
+        dirtySyncSections.add('lastRead');
+        scheduleCloudFlush(false);
+    }, 20000); // 20s stationary reading before queuing position
+}
 
 async function saveToLocalDB() {
     const dataToSave = { 
@@ -482,18 +663,17 @@ async function saveToLocalDB() {
     await localDB.set('bible_data', dataToSave); 
 }
 
-async function pushToCloud(updates) {
+function pushToCloud(updates = {}, immediate = false) {
     if (!currentUser) return;
-    try {
-        // updates is an object containing exact paths. e.g. { "highlights.Gen 1:1": { color, updatedAt } }
-        await window.firebase.setDoc(
-            window.firebase.doc(window.firebase.db, "users", currentUser.uid), 
-            updates, 
-            { merge: true }
-        );
-    } catch (err) {
-        console.error("Cloud push queued/failed:", err);
+    for (const key in updates) {
+        if (key === 'settings' || key.startsWith('settings.')) dirtySyncSections.add('settings');
+        else if (key === 'lastRead' || key.startsWith('lastRead.')) dirtySyncSections.add('lastRead');
+        else if (key === 'highlights' || key.startsWith('highlights.')) dirtySyncSections.add('highlights');
+        else if (key === 'bookmarks' || key.startsWith('bookmarks.')) dirtySyncSections.add('bookmarks');
+        else if (key === 'categories' || key.startsWith('categories.')) dirtySyncSections.add('categories');
+        else dirtySyncSections.add(key);
     }
+    scheduleCloudFlush(immediate);
 }
 
 function buildSettingsObject() {
@@ -576,10 +756,9 @@ function migrateDataStructures(data) {
 }
 
 function smartMerge(cloudData) {
-    let cloudUpdates = {};
     let uiNeedsUpdate = false;
 
-    const mergeEntityMap = (localMap, cloudMap, pathPrefix) => {
+    const mergeEntityMap = (localMap, cloudMap, sectionName) => {
         if (!cloudMap) return;
         
         // Merge cloud to local
@@ -594,14 +773,14 @@ function smartMerge(cloudData) {
                 localMap[key] = cItem;
                 uiNeedsUpdate = true;
             } else if (lItem.updatedAt > cItem.updatedAt) {
-                cloudUpdates[`${pathPrefix}.${key}`] = lItem;
+                dirtySyncSections.add(sectionName);
             }
         }
         
-        // Push strictly-local missing items to cloud
+        // Queue strictly-local missing items to cloud
         for (const key in localMap) {
             if (!cloudMap[key]) {
-                cloudUpdates[`${pathPrefix}.${key}`] = localMap[key];
+                dirtySyncSections.add(sectionName);
             }
         }
     };
@@ -619,10 +798,10 @@ function smartMerge(cloudData) {
             settingsUpdatedAt = cSet.updatedAt;
             uiNeedsUpdate = true;
         } else if (settingsUpdatedAt > cSet.updatedAt) {
-            cloudUpdates['settings'] = buildSettingsObject();
+            dirtySyncSections.add('settings');
         }
     } else {
-        cloudUpdates['settings'] = buildSettingsObject();
+        dirtySyncSections.add('settings');
     }
 
     // Merge LastRead
@@ -633,19 +812,21 @@ function smartMerge(cloudData) {
             updateSelectionText(lastRead.book, lastRead.chapter);
             uiNeedsUpdate = true;
         } else if (lastRead.timestamp > cLR.timestamp) {
-            cloudUpdates['lastRead'] = lastRead;
+            dirtySyncSections.add('lastRead');
         }
     } else {
-        cloudUpdates['lastRead'] = lastRead;
+        dirtySyncSections.add('lastRead');
     }
 
-    if (Object.keys(cloudUpdates).length > 0) {
-        pushToCloud(cloudUpdates); 
+    // Queue any offline changes into a single batched write
+    if (dirtySyncSections.size > 0) {
+        scheduleCloudFlush(false); 
     }
     
     if (uiNeedsUpdate) {
         saveToLocalDB();
         renderHighlights();
+        renderBookmarks();
         
         // Refresh reading view if it matches the screen
         if (document.querySelector('.chapter-heading')) {
@@ -694,11 +875,15 @@ function updateAuthUI(user) {
             btn.onclick = async () => {
                 const confirmed = await showConfirmDialog({
                     title: 'Sign Out of Account?',
-                    message: `Are you sure you want to sign out of ${user.email || 'your account'}? Local cached session data will be cleared to protect your privacy.`,
+                    message: `Are you sure you want to sign out of ${user.email || 'your account'}? Any pending changes will be saved to cloud first.`,
                     confirmText: 'Sign Out',
                     type: 'danger'
                 });
                 if (!confirmed) return;
+
+                if (dirtySyncSections.size > 0) {
+                    await flushPendingCloudUpdates();
+                }
 
                 auth.signOut().then(() => {
                     // On logout, explicitly clear local storage to prevent data bleed
@@ -710,30 +895,21 @@ function updateAuthUI(user) {
         }); 
         loginModal.classList.add('hidden'); 
         
-        // Initialize V2 Real-Time Cloud Listener
-        unsubscribeSync = window.firebase.onSnapshot(
-            window.firebase.doc(window.firebase.db, "users", currentUser.uid), 
-            (doc) => {
-                if (doc.exists()) {
-                    smartMerge(doc.data());
-                } else {
-                    // First time login - Push everything up
-                    smartMerge({});
-                }
-            },
-            (error) => {
-                console.error("Firestore sync error", error);
-            }
-        );
+        updateSyncStatusUI('syncing');
+
+        // Ultra-low read engine: Load local cache instantly (0 reads), then pull once from cloud (1 read)
+        loadDataFromLocalDB().then(() => {
+            pullFromCloud(true);
+        });
 
     } else { 
-        if (unsubscribeSync) unsubscribeSync();
         currentUser = null; 
         authBtns.forEach(btn => { 
             btn.textContent = 'Login / Sign Up'; 
             btn.className = 'auth-management-btn w-full btn-secondary font-medium py-2.5 px-4 rounded-lg text-sm'; 
             btn.onclick = () => { loginModal.classList.remove('hidden'); authError.classList.add('hidden'); }; 
         }); 
+        updateSyncStatusUI('offline');
         loadDataFromLocalDB(); 
     }
 }
@@ -791,7 +967,8 @@ mainScrollArea.addEventListener('scroll', () => {
                 if (lastRead.book !== b || lastRead.chapter !== c || lastRead.verse !== v) {
                     lastRead = { book: b, chapter: c, verse: v, timestamp: Date.now() };
                     updateSelectionText(b, c);
-                    saveToLocalDB(); pushToCloud({ lastRead });
+                    saveToLocalDB();
+                    scheduleLastReadSync();
                 }
             }
         }
@@ -3629,16 +3806,54 @@ window.onload = async () => {
     document.querySelectorAll('.reset-settings-btn').forEach(btn => btn.addEventListener('click', resetSettings));
     document.querySelectorAll('.reset-app-btn').forEach(btn => btn.addEventListener('click', resetApp));
     document.querySelectorAll('.translation-select').forEach(sel => sel.addEventListener('change', e => applyTranslation(e.target.value)));
+
+    document.querySelectorAll('#cloud-sync-now-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            if (!currentUser) return;
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'pointer-events-none');
+            showToast("Syncing with cloud...");
+            await flushPendingCloudUpdates();
+            await pullFromCloud(true);
+            showToast("Sync complete!");
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'pointer-events-none');
+        });
+    });
     
     document.querySelectorAll('.open-settings-modal-btn').forEach(btn => btn.addEventListener('click', () => {
         settingsModal.classList.remove('hidden');
         if (window.innerWidth < 1024) toggleMobileSidebar(false);
+        updateSyncStatusUI(dirtySyncSections.size > 0 ? 'pending' : (lastSyncedTime ? 'synced' : (currentUser ? 'synced' : 'offline')));
         renderFullThemes(currentThemeCategory);
         updateFullThemesUI();
         updateSettingsPreview();
         updateOfflineSectionUI();
     }));
     closeSettingsModalBtn.addEventListener('click', () => settingsModal.classList.add('hidden'));
+
+    // Ultra-low write Lifecycle Management: Coalesce all changes and flush before tab hides or closes
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            if (dirtySyncSections.size > 0) {
+                flushPendingCloudUpdates();
+            }
+        } else if (document.visibilityState === 'visible') {
+            pullFromCloud(false);
+        }
+    });
+
+    window.addEventListener('beforeunload', () => {
+        if (dirtySyncSections.size > 0) {
+            flushPendingCloudUpdates();
+        }
+    });
+
+    window.addEventListener('online', () => {
+        if (dirtySyncSections.size > 0) {
+            flushPendingCloudUpdates();
+        }
+    });
 
     // Width Preset Buttons
     document.querySelectorAll('.width-preset-btn').forEach(btn => {

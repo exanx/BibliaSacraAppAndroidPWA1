@@ -9,7 +9,6 @@
     "lint": "node -e 'console.log(\"Lint passed\")'"
   },
   "dependencies": {
-    "express": "^4.21.2",
-    "sharp": "^0.35.5"
+    "express": "^4.21.2"
   }
 }
