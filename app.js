@@ -855,7 +855,7 @@ async function loadDataFromLocalDB() {
         updateTranslationDropdowns(); 
         updateFontDropdowns(); 
         updateQuoteFontDropdown();
-        applyTranslation('drb', true); 
+        applyTranslation('cpdv', true); 
     } 
 }
 
@@ -1124,8 +1124,8 @@ function updateTranslationDropdowns() {
     document.querySelectorAll('.translation-select, #translation-select-quote').forEach(select => {
         const currentVal = select.value;
         let html = `
-            <option value="drb" data-name="Douay-Rheims Bible" data-short="DRV" data-base-url="https://exanx.github.io/bible-json/DRB-73-Books">Douay-Rheims Bible</option>
             <option value="cpdv" data-name="Catholic Public Domain Version" data-short="CPDV" data-base-url="https://exanx.github.io/bible-json/CPDV-73-Books">Catholic Public Domain</option>
+            <option value="drb" data-name="Douay-Rheims Bible" data-short="DRV" data-base-url="https://exanx.github.io/bible-json/DRB-73-Books">Douay-Rheims Bible</option>
             <option value="web" data-name="World English Bible: Catholic Edition" data-short="WEBC">World English Bible (CE)</option>
             <option value="kjv" data-name="King James Version (Deuterocanon)" data-short="KJV/D">King James Version (w/ DC)</option>
         `;
@@ -1138,14 +1138,14 @@ function updateTranslationDropdowns() {
         }
         select.innerHTML = html;
         if (select.querySelector(`option[value="${currentVal}"]`)) select.value = currentVal;
-        else select.value = 'drb';
+        else select.value = 'cpdv';
     });
     
     const offlineVersionSelect = document.getElementById('offline-version-select');
     if (offlineVersionSelect) {
         let optHtml = `
-            <option value="drb" data-name="Douay-Rheims Bible" data-base-url="https://exanx.github.io/bible-json/DRB-73-Books">Douay-Rheims Bible (73 Books)</option>
             <option value="cpdv" data-name="Catholic Public Domain Version" data-base-url="https://exanx.github.io/bible-json/CPDV-73-Books">Catholic Public Domain Version (73 Books)</option>
+            <option value="drb" data-name="Douay-Rheims Bible" data-base-url="https://exanx.github.io/bible-json/DRB-73-Books">Douay-Rheims Bible (73 Books)</option>
         `;
         if (customBibles.length > 0) {
             optHtml += `<optgroup label="Custom Bibles">`;
@@ -1157,6 +1157,7 @@ function updateTranslationDropdowns() {
         const curr = offlineVersionSelect.value;
         offlineVersionSelect.innerHTML = optHtml;
         if (offlineVersionSelect.querySelector(`option[value="${curr}"]`)) offlineVersionSelect.value = curr;
+        else offlineVersionSelect.value = 'cpdv';
     }
 }
 
@@ -1194,7 +1195,7 @@ window.removeCustomBible = async (id) => {
     renderCustomBiblesList();
     const currentTranslation = document.querySelector('.translation-select').value;
     if (currentTranslation === `custom_${id}`) {
-        applyTranslation('drb');
+        applyTranslation('cpdv');
     }
     showToast(`Removed "${bibleName}"`);
 };
@@ -1665,8 +1666,8 @@ async function updateOfflineSectionUI() {
 
     if (versionSelect.children.length === 0) {
         let html = `
-            <option value="drb" data-name="Douay-Rheims Bible" data-base-url="https://exanx.github.io/bible-json/DRB-73-Books">Douay-Rheims Bible (73 Books)</option>
             <option value="cpdv" data-name="Catholic Public Domain Version" data-base-url="https://exanx.github.io/bible-json/CPDV-73-Books">Catholic Public Domain Version (73 Books)</option>
+            <option value="drb" data-name="Douay-Rheims Bible" data-base-url="https://exanx.github.io/bible-json/DRB-73-Books">Douay-Rheims Bible (73 Books)</option>
         `;
         if (customBibles.length > 0) {
             customBibles.forEach(cb => {
@@ -1676,9 +1677,9 @@ async function updateOfflineSectionUI() {
         versionSelect.innerHTML = html;
     }
 
-    const currentKey = versionSelect.value || 'drb';
+    const currentKey = versionSelect.value || 'cpdv';
     const opt = versionSelect.querySelector(`option[value="${currentKey}"]`);
-    const versionName = opt ? opt.dataset.name : 'Douay-Rheims Bible';
+    const versionName = opt ? opt.dataset.name : 'Catholic Public Domain Version';
 
     const titleEl = document.getElementById('offline-version-title');
     const descEl = document.getElementById('offline-version-desc');
@@ -1958,7 +1959,7 @@ function openQuoteModal(defaultBook, defaultChapter, defaultFrom, defaultTo) {
     if(defaultChapter) quoteChapterSelect.value = defaultChapter; 
     quoteVerseFromEl.value = defaultFrom || '1'; 
     quoteVerseToEl.value = defaultTo || defaultFrom || '1'; 
-    document.getElementById('translation-select-quote').value = document.querySelector('.translation-select').value || 'drb'; 
+    document.getElementById('translation-select-quote').value = document.querySelector('.translation-select').value || 'cpdv'; 
     quoteModal.classList.remove('hidden'); 
     renderRandomQuoteInspirationChips();
     updateQuoteLivePreview();
@@ -2101,13 +2102,13 @@ async function updateQuoteLivePreview() {
     const verseRange = fromVerse === toVerse ? fromVerse : `${fromVerse}–${toVerse}`;
     
     const translationSelect = document.getElementById('translation-select-quote');
-    const shortVersion = translationSelect && translationSelect.selectedOptions && translationSelect.selectedOptions[0] ? (translationSelect.selectedOptions[0].dataset.short || translationSelect.selectedOptions[0].dataset.name) : 'DRB';
+    const shortVersion = translationSelect && translationSelect.selectedOptions && translationSelect.selectedOptions[0] ? (translationSelect.selectedOptions[0].dataset.short || translationSelect.selectedOptions[0].dataset.name) : 'CPDV';
     
     previewRef.textContent = `— ${book} ${chapter}:${verseRange} (${shortVersion})`;
     previewRef.style.color = refColor;
     
     try {
-        const text = await fetchQuoteVerseText(book, chapter, fromVerse, toVerse, translationSelect ? translationSelect.value : 'drb');
+        const text = await fetchQuoteVerseText(book, chapter, fromVerse, toVerse, translationSelect ? translationSelect.value : 'cpdv');
         if (text) {
             previewText.textContent = text.trim();
             
@@ -2341,8 +2342,8 @@ async function generateAndDownloadQuote() {
     
     try {
         const translationSelect = document.getElementById('translation-select-quote');
-        const shortVersion = translationSelect && translationSelect.selectedOptions && translationSelect.selectedOptions[0] ? (translationSelect.selectedOptions[0].dataset.short || translationSelect.selectedOptions[0].dataset.name) : 'DRB';
-        const verseText = await fetchQuoteVerseText(book, chapter, verseFrom, verseTo, translationSelect ? translationSelect.value : 'drb');
+        const shortVersion = translationSelect && translationSelect.selectedOptions && translationSelect.selectedOptions[0] ? (translationSelect.selectedOptions[0].dataset.short || translationSelect.selectedOptions[0].dataset.name) : 'CPDV';
+        const verseText = await fetchQuoteVerseText(book, chapter, verseFrom, verseTo, translationSelect ? translationSelect.value : 'cpdv');
         if (!verseText) throw new Error("Verse text could not be loaded.");
         const refText = `— ${book} ${chapter}:${verseRange} (${shortVersion})`;
         
@@ -2373,8 +2374,8 @@ async function copyQuoteToClipboard() {
     
     try {
         const translationSelect = document.getElementById('translation-select-quote');
-        const shortVersion = translationSelect && translationSelect.selectedOptions && translationSelect.selectedOptions[0] ? (translationSelect.selectedOptions[0].dataset.short || translationSelect.selectedOptions[0].dataset.name) : 'DRB';
-        const verseText = await fetchQuoteVerseText(book, chapter, verseFrom, verseTo, translationSelect ? translationSelect.value : 'drb');
+        const shortVersion = translationSelect && translationSelect.selectedOptions && translationSelect.selectedOptions[0] ? (translationSelect.selectedOptions[0].dataset.short || translationSelect.selectedOptions[0].dataset.name) : 'CPDV';
+        const verseText = await fetchQuoteVerseText(book, chapter, verseFrom, verseTo, translationSelect ? translationSelect.value : 'cpdv');
         if (!verseText) throw new Error("Could not load verse text.");
         const refText = `— ${book} ${chapter}:${verseRange} (${shortVersion})`;
         
@@ -3033,6 +3034,11 @@ const voiceReader = {
     activeUtterance: null,
     silentAudio: null,
     silentAudioUrl: null,
+    audioCtx: null,
+    bgOscillator: null,
+    bgGain: null,
+    watchdogInterval: null,
+    currentNotification: null,
     wakeLock: null,
     nextVerseTimeout: null,
     consecutiveErrors: 0,
@@ -3053,20 +3059,112 @@ const voiceReader = {
 
         this.setupMediaSession();
 
-        // Safe background audio maintenance for PWA mode
+        // Web Audio & Background Audio maintenance for PWA & minimized tabs
         document.addEventListener('visibilitychange', () => {
             if (this.isPlaying && !this.isPaused) {
                 if (document.hidden) {
+                    if (this.audioCtx && this.audioCtx.state === 'suspended') {
+                        this.audioCtx.resume().catch(() => {});
+                    }
                     if (this.silentAudio && this.silentAudio.paused) {
                         this.silentAudio.play().catch(() => {});
                     }
+                    if (this.verses[this.currentVerseIndex]) {
+                        this.updateNotification(this.verses[this.currentVerseIndex]);
+                    }
                 } else {
+                    if (this.currentNotification) {
+                        try { this.currentNotification.close(); } catch (e) {}
+                    }
                     this.acquireWakeLock();
                 }
             }
         });
 
         this.bindUI();
+    },
+
+    requestNotificationAccess() {
+        if ('Notification' in window && Notification.permission === 'default') {
+            try {
+                Notification.requestPermission().catch(() => {});
+            } catch (e) {}
+        }
+    },
+
+    updateNotification(verse) {
+        if (!verse || !('Notification' in window) || Notification.permission !== 'granted') return;
+        try {
+            if (this.currentNotification) {
+                try { this.currentNotification.close(); } catch (e) {}
+            }
+            this.currentNotification = new Notification(`${this.currentBook} ${this.currentChapter}:${verse.num}`, {
+                body: verse.text,
+                icon: '/icon-192.png',
+                badge: '/icon-192.png',
+                tag: 'biblia-reading',
+                silent: true
+            });
+        } catch (e) {}
+    },
+
+    ensureWebAudioKeeper() {
+        try {
+            if (!this.audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) {
+                    this.audioCtx = new AudioContextClass();
+                    // Sub-audible carrier oscillator kept at minimal gain (0.00001)
+                    // Maintains audio hardware session alive in mobile background & lock screen
+                    const osc = this.audioCtx.createOscillator();
+                    const gain = this.audioCtx.createGain();
+                    osc.frequency.setValueAtTime(50, this.audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.00001, this.audioCtx.currentTime);
+                    osc.connect(gain);
+                    gain.connect(this.audioCtx.destination);
+                    osc.start();
+                    this.bgOscillator = osc;
+                    this.bgGain = gain;
+                }
+            }
+            if (this.audioCtx && this.audioCtx.state === 'suspended') {
+                this.audioCtx.resume().catch(() => {});
+            }
+        } catch (e) {
+            console.warn('Web Audio background keeper initialization note:', e);
+        }
+    },
+
+    startWatchdog() {
+        this.stopWatchdog();
+        this.watchdogInterval = setInterval(() => {
+            if (!this.isPlaying || this.isPaused) return;
+
+            // Maintain Web Audio context alive
+            if (this.audioCtx && this.audioCtx.state === 'suspended') {
+                this.audioCtx.resume().catch(() => {});
+            }
+
+            // Maintain silent audio anchor
+            if (this.silentAudio && this.silentAudio.paused) {
+                this.silentAudio.play().catch(() => {});
+            }
+
+            // Prevent mobile browser 15s SpeechSynthesis freeze bug
+            if ('speechSynthesis' in window && window.speechSynthesis.speaking) {
+                try {
+                    window.speechSynthesis.pause();
+                    window.speechSynthesis.resume();
+                } catch (e) {}
+            }
+        }, 5000);
+    },
+
+    stopWatchdog() {
+        if (this.watchdogInterval) {
+            clearInterval(this.watchdogInterval);
+            this.watchdogInterval = null;
+        }
     },
 
     // Generates a valid 5-second silent PCM WAV blob so the audio pipeline never loops in a 0ms busy loop
@@ -3296,11 +3394,14 @@ const voiceReader = {
         this.currentVerseIndex = startIndex;
         this.consecutiveErrors = 0;
 
-        // Initialize safe background audio anchor for PWA
+        // Initialize background Web Audio keeper & notification access
+        this.requestNotificationAccess();
         this.initBackgroundAudioAnchor();
+        this.ensureWebAudioKeeper();
         if (this.silentAudio && this.silentAudio.paused) {
             this.silentAudio.play().catch(() => {});
         }
+        this.startWatchdog();
 
         this.acquireWakeLock();
         this.showPlayerBar();
@@ -3384,6 +3485,10 @@ const voiceReader = {
             navigator.mediaSession.playbackState = 'playing';
         }
 
+        if (document.hidden) {
+            this.updateNotification(verse);
+        }
+
         let speakText = verse.text;
         if (this.currentVerseIndex === 0 && parseInt(verse.num) === 1) {
             speakText = `${this.currentBook}, chapter ${this.currentChapter}. ${verse.text}`;
@@ -3433,6 +3538,12 @@ const voiceReader = {
         if (!this.isPlaying) return;
         this.isPaused = true;
 
+        this.stopWatchdog();
+        if (this.currentNotification) {
+            try { this.currentNotification.close(); } catch (e) {}
+            this.currentNotification = null;
+        }
+
         if (this.nextVerseTimeout) {
             clearTimeout(this.nextVerseTimeout);
             this.nextVerseTimeout = null;
@@ -3472,9 +3583,11 @@ const voiceReader = {
         }
 
         this.isPaused = false;
+        this.ensureWebAudioKeeper();
         if (this.silentAudio && this.silentAudio.paused) {
             this.silentAudio.play().catch(() => {});
         }
+        this.startWatchdog();
         this.acquireWakeLock();
         this.setPlayPauseIcon(true);
 
@@ -3527,6 +3640,12 @@ const voiceReader = {
         this.isPlaying = false;
         this.isPaused = false;
         this.consecutiveErrors = 0;
+
+        this.stopWatchdog();
+        if (this.currentNotification) {
+            try { this.currentNotification.close(); } catch (e) {}
+            this.currentNotification = null;
+        }
 
         if (this.nextVerseTimeout) {
             clearTimeout(this.nextVerseTimeout);
@@ -3604,7 +3723,7 @@ const voiceReader = {
 
         if (refEl) refEl.textContent = `${this.currentBook} ${this.currentChapter}:${verse.num}`;
         if (progressEl) progressEl.textContent = `${this.currentVerseIndex + 1}/${this.verses.length}`;
-        if (versionEl) versionEl.textContent = currentTranslationName || 'Douay-Rheims';
+        if (versionEl) versionEl.textContent = currentTranslationName || 'Catholic Public Domain';
 
         if (barProgress && this.verses.length) {
             const pct = Math.round(((this.currentVerseIndex + 1) / this.verses.length) * 100);
@@ -3726,7 +3845,54 @@ const voiceReader = {
     }
 };
 
+// ========================================================
+// SECURITY & BROWSER SAVE-AS MITIGATION
+// ========================================================
+function initWebpageSaveProtection() {
+    // 1. Block right-click context menu (Save As...) except in text inputs
+    document.addEventListener('contextmenu', (e) => {
+        const tag = e.target && e.target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target && e.target.isContentEditable)) {
+            return; // Allow standard cut/copy/paste inside search and note fields
+        }
+        e.preventDefault();
+        e.stopPropagation();
+    }, { capture: true });
+
+    // 2. Block keyboard shortcuts: Ctrl+S / Cmd+S (Save Page), Ctrl+Shift+S, Ctrl+U (View Source)
+    window.addEventListener('keydown', (e) => {
+        const isCmdOrCtrl = e.ctrlKey || e.metaKey;
+        if (!isCmdOrCtrl) return;
+
+        const key = (e.key || '').toLowerCase();
+        // Save page shortcut
+        if (key === 's') {
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof showToast === 'function') {
+                showToast("Saving this page is disabled.");
+            }
+            return false;
+        }
+        // View source shortcut
+        if (key === 'u') {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+    }, { capture: true });
+
+    // 3. Prevent dragging images to desktop or file manager
+    document.addEventListener('dragstart', (e) => {
+        if (e.target && e.target.tagName === 'IMG') {
+            e.preventDefault();
+        }
+    });
+}
+initWebpageSaveProtection();
+
 window.onload = async () => {
+    initWebpageSaveProtection();
     document.body.dataset.activeTheme = currentActiveThemeId;
     updateFontDropdowns();
     updateQuoteFontDropdown();
